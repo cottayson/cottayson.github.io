@@ -1,8 +1,23 @@
-<textarea id="T" style="width: 300px; height: 250px;"></textarea>
-<textarea id="T2" style="width: 300px; height: 250px; position: absolute"></textarea>
-<p>
-<textarea id="T3" style="width: 300px; height: 300px; position: absolute"></textarea> 
-<textarea id="out" style="left: 312px; width: 300px; height: 300px; position: absolute"></textarea> 
+<textarea id="T" style="
+width: 300px; height: 300px;
+"></textarea>
+
+<textarea id="T2" style="
+width: 300px; height: 300px;
+position: absolute
+"></textarea>
+
+<textarea id="T3" style="
+top: 312px;
+width: 300px; height: 300px;
+position: absolute"
+></textarea>
+
+<textarea id="out" style="
+left: 312px; top: 312px;
+width: 300px; height: 300px;
+position: absolute;
+"></textarea> 
 
 <script>
 var t=0, A_=[], N_=0;
@@ -21,6 +36,7 @@ if(N_ % 5 == 0) out.value+='\n'}
 
 onload=function(){
 t=setInterval(FT, 100);
+T.value="[f>f<]";
 T3.value='F='+F.toString()+'\nH = [0,1,0];\nLenA = 3;\nipEnable = 1;';
 Parsing(); out.value=''; N_=0;
 }
@@ -115,7 +131,7 @@ var program=preParse(S);
 if(rules(program))
 if(u(program,buf,maxn)) console.log(program)}
 }
-///****************************************************************************
+///***************************************************************************
 
 var G_=[];
 
@@ -208,7 +224,9 @@ return S
 
 function F(a){
 var x=a[0], y=a[1], z=a[2];
-a[0]=x;
+
+a[1] = x ^ y;
+
 return a;
 }
 var sys=2, LenA=3, n_max=150, H=[0,1,0], ipEnable=1;
@@ -295,7 +313,9 @@ return [a, ip]
 
 function preParse(s){
 var S='', st=[];
-isDigit=function(simbol){for(var i=1;i<10;i++) if(simbol==i) return true; return false}
+isDigit=function(simbol){for(var i=1;i<10;i++) if(simbol==i) return true; 
+
+return false}
 for(var i=0;i<s.length;i++){
 if(isDigit(s[i])) {S+='['; st.push(+s[i]+i)}
 else S+=s[i];
