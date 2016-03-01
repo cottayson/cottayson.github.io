@@ -1,1 +1,309 @@
-Привет, Вселенная!
+<textarea id="T" style="width: 300px; height: 250px;"></textarea>
+<textarea id="T2" style="width: 300px; height: 250px; position: absolute"></textarea>
+<p>
+<textarea id="T3" style="width: 300px; height: 300px; position: absolute"></textarea> 
+<textarea id="out" style="left: 312px; width: 300px; height: 300px; position: absolute"></textarea> 
+
+<script>
+var t=0, A_=[], N_=0;
+
+function FT(){
+if (!T.value) return;
+var A=rndSearch(T.value,1000);
+for(var i=0; i<A.length; i++){
+var Append=1;
+for(var k=0; k<A_.length; k++)
+	if(A[i]==A_[k]) { Append=0; break}
+if(Append) {A_.push(A[i]); out.value+=A[i]+'\n'; N_++;
+if(N_ % 5 == 0) out.value+='\n'}
+}
+}
+
+onload=function(){
+t=setInterval(FT, 100);
+T3.value='F='+F.toString()+'\nH = [0,1,0];\nLenA = 3;\nipEnable = 1;';
+Parsing(); out.value=''; N_=0;
+}
+
+function Parsing(){
+eval(T3.value);
+var v=[];
+T2.value='x y z            ip\n';
+v=b(T.value,[0,0,0]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
+v=b(T.value,[1,0,0]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
+v=b(T.value,[0,1,0]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
+v=b(T.value,[1,1,0]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
+
+v=b(T.value,[0,0,1]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
+v=b(T.value,[1,0,1]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
+v=b(T.value,[0,1,1]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
+v=b(T.value,[1,1,1]); T2.value+=v[0].join(' ')+'    '+v[1];
+}
+
+T.oninput=function(){
+A_=[]; Parsing(); out.value=''; N_=0;
+}
+T3.oninput=Parsing;
+
+h=function(st){
+var S='';
+for(var i=0;i<st.length;i++){
+S+='('; 
+S+=st[i][0]+' '; 
+S+=st[i][1];
+S+=') ';
+}
+return S
+}
+
+function rules(s){
+var sum=0;
+for(var i=0;i<s.length;i++){
+if(s[i]=='[') sum++; else
+if(s[i]==']') sum--;
+if(sum<0) return false;
+}
+return !sum;
+}
+
+function toStr(x,o,L){
+var S=x.toString(o);
+while(S.length<L){S='0'+S}
+return S;
+}
+
+function gperebor(strB,strE,L,buf,arN,lenprog,exp){
+var I=0;
+l=Math.pow(exp,lenprog);
+for(var i=0;i<L;i++){
+if (i>=l) return i+'';
+var s=toStr(i,exp,lenprog), S='';
+for(var j=0;j<s.length;j++)
+switch(s[j]){
+case '0': S='f'+S; break;
+case '1': S='>'+S; break;
+case '2': S='<'+S; break;
+default: I=+s[j];
+if (I>=3 && I<exp) S=(I-2)+S;
+}
+var program=preParse(strB+S+strE);
+if(rules(program)){
+var bool=true;
+for(var k=0;k<arN.length;k++)
+if(!u(program,buf,arN[k])) {bool=false; break}
+if(bool) console.log(program);
+}
+
+}
+return L;
+}
+
+function perebor(L,buf,maxn,lenprog,exp){
+var I=0;
+for(var i=0;i<L;i++){
+var s=toStr(i,exp,lenprog), S='';
+for(var j=0;j<s.length;j++){
+switch(s[j]){
+case '0': S='f'+S; break;
+case '1': S='>'+S; break;
+case '2': S='<'+S; break;
+default: I=+s[j];
+if (I>=3 && I<exp) S=(I-2)+S;
+}
+}
+var program=preParse(S);
+if(rules(program))
+if(u(program,buf,maxn)) console.log(program)}
+}
+///****************************************************************************
+
+var G_=[];
+
+function rndSearch(program, L){
+G_=initG(program);
+var A=[];
+for(var i=0; i<L; i++){
+program=rndProg(program);
+if(rules(program))
+if(u(program,7,50)) {
+var Append=1;
+for(var j = 0; j < A.length; j++)
+if(A[j]==program) {Append=0; break}
+if(Append) A.push(program)}
+}
+return A
+}
+
+function toDigit(str){
+switch(str){
+case 'f': str='0'; break;
+case '>': str='1'; break;
+case '<': str='2'; break;
+case '[': str='3'; break;
+case ']': str='4'; break;
+default: str='1'; break}
+return str;
+}
+
+function initG(s){
+var G=[];
+G[0]=[0,1,1,1,1];
+G[1]=[1,1,0,1,1];
+G[2]=[1,0,1,1,1];
+G[3]=[1,1,1,1,0];
+G[4]=[1,1,1,0,0];
+
+for(var i = 0; i < s.length-1; i++){
+var n = +toDigit(s[i]), Rn = +toDigit(s[i+1]);
+if(G[n][Rn]>0)G[n][Rn]++
+}
+return G
+}
+
+function toSymbol(str){
+switch(str){
+case '0': str='f'; break;
+case '1': str='>'; break;
+case '2': str='<'; break;
+case '3': str='['; break;
+case '4': str=']'; break;
+default: str=' '; break}
+return str;
+}
+
+function rndProg(s){
+var G=G_, rnd=Math.random, fl=Math.floor;
+rndIndex=function(a){
+var sum=0;
+for(var i=0; i<5; i++) sum+=a[i];
+var r=rnd(), i=x=0;
+while(r>=x && i<5){
+x+=a[i]/sum;
+i++
+}
+return i-1}
+
+function Func(Lstr, str){
+return rndIndex(G[parseInt(Lstr)]).toString();
+}
+
+var S='';
+for(var i = 0; i < s.length; i++){
+var str=toDigit(s[i]), Lstr='';
+if (i==0) Lstr='3'; else Lstr=toDigit(S[i-1]);
+str=Func(Lstr, str);
+str=toSymbol(str);
+S=S+str;
+
+/*     f    >    <    [    ]
+f => [ 0%, 25%, 25%, 25%, 25%]
+> => [25%, 25%,  0%, 25%, 25%]
+< => [25%,  0%, 25%, 25%, 25%]
+[ => [25%, 25%, 25%, 25%,  0%]
+] => [25%, 25%, 25%,  0%, 25%]
+*/
+}
+return S
+}
+
+function F(a){
+var x=a[0], y=a[1], z=a[2];
+a[0]=x;
+return a;
+}
+var sys=2, LenA=3, n_max=150, H=[0,1,0], ipEnable=1;
+
+u=function(s,buf,N){
+var L=Math.pow(sys,LenA);
+for(var i=0;i<L;i++){
+var S=i.toString(sys);
+while(S.length<LenA) S='0'+S;
+while(S.length<buf) S=S+'0';
+var U=[];
+for(var k=0;k<buf;k++) U.push(parseInt(S[k]));
+
+var a=B(s,U,buf,N);
+if (a==false) return false;
+var ip=a[1];
+a=a[0];
+if (ipEnable) if(ip) return false;
+var C=F(U);
+for(var k=0; k<H.length; k++)
+	if(H[k] && a[k]!=C[k]) return false;
+}
+return true;
+}
+
+B=function (s,init,buf,N){
+var a=[], ip=0, n=0, st=[[1,1]];
+for(var i=0;i<buf;i++) {a[i]=0}
+for(var i=0;i<init.length;i++) a[i]=init[i];
+
+isin=function(){return st[st.length-1][1]}
+
+for(var i=0;i<s.length;i++){ n++; if(n>N) return false;
+switch(s[i]){
+case 'f': if(isin()){a[ip]++} break;
+case '>': if(isin()){ip++} break;
+case '<': if(isin()){ip--} break;
+case '[': st.push([i,a[ip]]); break;
+case ']': var x=st.pop(); 
+if(a[ip] && x[1]){i=x[0]; st.push(x)} break;
+}
+if(ip<0) ip+=buf; else
+if(ip>=buf) ip-=buf;
+if(a[ip]==undefined) a[ip]=0;
+a[ip]=a[ip]%sys;
+} 
+return [a, ip];
+}
+
+b=function (s,init){
+var buf=7, n=0; //T2.value='';
+var a=[], ip=0, st=[[1,1]];
+for(var i=0;i<buf;i++) a[i]=0;
+for(var i=0;i<init.length;i++) a[i]=init[i];
+
+isin=function(){return st[st.length-1][1]}
+toOut=function(s){}
+stspace=function(){for(var i=0; i<st.length; i++) toOut(' ')}
+
+for(var i=0;i<s.length;i++){
+n++; 
+if(n>n_max) {
+var str='n>'+n_max; while(str.length<13) str=str+' '; return [[str],ip]
+}
+switch(s[i]){
+case 'f': if(isin()){a[ip]++; toOut(s[i])} break;
+case '>': if(isin()){ip++; toOut(s[i])} break;
+case '<': if(isin()){ip--;toOut(s[i])} break;
+case '[': st.push([i,a[ip]]); 
+if(a[ip]) {toOut('\n'); stspace(); toOut('['); toOut('\n'); stspace();} break;
+case ']': var x=st.pop(); 
+if(a[ip]!=0 && x[1]){i=x[0]; st.push(x)}
+
+if(a[ip]) {toOut('],'+'\n'); stspace(); toOut('[');}
+else  {toOut('\n'); stspace(); toOut('].'); stspace()}break;
+}
+if(ip<0) ip+=buf; else
+if(ip>=buf) ip-=buf;
+if(a[ip]==undefined) a[ip]=0;
+a[ip]=a[ip]%sys;
+} 
+return [a, ip]
+}
+
+function preParse(s){
+var S='', st=[];
+isDigit=function(simbol){for(var i=1;i<10;i++) if(simbol==i) return true; return false}
+for(var i=0;i<s.length;i++){
+if(isDigit(s[i])) {S+='['; st.push(+s[i]+i)}
+else S+=s[i];
+var j=0;
+while (i>=st[st.length-1]+j && st.length>0) {S+=']'; j++; st.pop()}
+}
+return S;
+}
+
+//T3.value='b='+b;
+</script>
