@@ -2,7 +2,7 @@
 This open-sourse project.
 
 This use a bitchanger languge include five operations
-# change bit 
+# flip a bit
 
 1) 'f'  a[ip] = !a[ip] 
 
