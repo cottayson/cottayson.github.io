@@ -23,3 +23,11 @@ This use a bitchanger languge include five operations
 a  memory array 
 
 ip memory pointer
+
+y = xor(x, y)
+
+[f>f<]
+
+copy x to (x, x)
+
+f>[f]f<[[f>f]f>]f<f ip == 0 >[>]<<<<[<]>[>f]<[f>f<]>
