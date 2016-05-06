@@ -12,7 +12,7 @@ gain.connect(context.destination);
 
 var channels = 2;
 
-var duration = 100;
+var duration = 500;
 
 var frameCount = context.sampleRate * duration/1000;
 
@@ -44,7 +44,7 @@ return (x>0) ? 1 : -1;
 }
 
 
-playSound = function(rate, volume) {
+playSound = function(rate, volume, type) {
 var curBuffer = bufferArray[0];
 var dc = new Date();
 var uninterruptedly = false, min = (+dc) - (+d[0]), i_min = 0, num = 0;
@@ -76,11 +76,20 @@ if (volume > 1) volume = 1;
   for (var channel = 0; channel < channels; channel++) {
     // This gives us the actual array that contains the data
     var nowBuffering = curBuffer.getChannelData(channel);
+
+
+if (type == "h") {
+	var frameLength = 2400;
+   for (var i = 0; i < frameCount; i++) {
+      nowBuffering[i] = (i >= frameLength) ? 0 : volume * (Math.random()*2-1) * (1 - i/frameLength);
+    }
+	} else {
     for (var i = 0; i < frameCount; i++) {
       // Math.random() is in [0; 1.0]
       // audio needs to be in [-1.0; 1.0]
       nowBuffering[i] = volume * dist(Math.sin(i * (rate * (1 + 0.0001 * Math.sin(i * 5 * Math.PI / 48000 * channels) )) * Math.PI / 48000 * channels)) * (1 - i/frameCount);
     }
+	}
   }
 
   // Get an AudioBufferSourceNode.
@@ -103,14 +112,19 @@ source.start();
 }
 
 playNote = function(note, volume) {
-var rate = 110 * Math.pow(2, note/12.0);
-playSound(rate, volume);
+var rate = 440;
+var type = undefined;
+if(typeof note != "string") {
+	rate = 110 * Math.pow(2, note/12.0);
+	} else {
+	type = note;
+	}
+playSound(rate, volume, type);
 }
 
 var pushing = false;
 
 var a = [226, 90, 88, 67, 86, 66, 78, 77, 188, 190, 191, 16, 65, 83, 68, 70, 71, 72, 74, 75, 76, 186, 222, 220, 81, 87, 69, 82, 84, 89, 85, 73, 79, 80, 219, 221, 13];
-
 
 document.onkeydown = function(e) {
 var k = e.keyCode;
@@ -124,37 +138,41 @@ for(var i=0; i<a.length; i++)
 	if(a[i] == k) {
 		if(!pushing) {
 		var vol = (100 - i) / 100 * 0.02;
-		if (i <= 12) curChord = i;
+		if (i <= 11) curChord = i;
 		else
 		playNote(i, vol);
 		}
 		break
 	}
-
+if (k == 32) curChord = -1;
 }
-var chord = -12, curChord = chord;
+var chord = -1, curChord = chord;
 var styles = [
-[[0,12],[7,7+12],-12,-12],  [0,7,12,[7,19]], 
-[0,7,12,[7,19]],  [0,7,12,[7,19]], 
-[0,7,12,[7,19]],  [0,7,12,[7,19]], 
-[0,7,12,[7,19]],  [0,7,12,[7,19]], 
-[0,7,12,[7,19]],  [0,7,12,[7,19]], 
-[0,7,12,[7,19]],  [0,7,12,[7,19]], 
+[["h",0,0+12],["h",-5,-5+12],["h"],["h"]], [["h",0,0+12],["h",-5,-5+12],["h"],["h"]],
+[["h",0,0+12],["h",-5,-5+12],["h"],["h"]], [["h",0,0+12],["h",-5,-5+12],["h"],["h"]],
+[["h",0,0+12],["h",-5,-5+12],["h"],["h"]], [["h",0,0+12],["h",-5,-5+12],["h"],["h"]],
+[["h",0,0+12],["h",-5,-5+12],["h"],["h"]], [["h",0,0+12],["h",-5,-5+12],["h"],["h"]],
+[["h",0,0+12],["h",-5,-5+12],["h"],["h"]], [["h",0,0+12],["h",-5,-5+12],["h"],["h"]],
+[["h",0,0+12],["h",-5,-5+12],["h"],["h"]], [["h",0,0+12],["h",-5,-5+12],["h"],["h"]],
 ];
 
 function initStyles() {
-var C=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+var C=[0, 1, 2, 3, 4, 5, 6, 7, 8, -3, -2, -1];
 for(var i=1; i<styles.length; i++)
 	for(var j=0; j<styles[i].length; j++) {
-	if (styles[i][j].length == undefined)
-		styles[i][j] = styles[i][j] + C[i];
+	if (typeof styles[i][j] != "object") {
+		if (typeof styles[i][j] != "string")
+		styles[i][j] += C[i];
+	}
 	else 	
-		for(var k=0; k<styles[i][j].length; k++)
-			styles[i][j][k] = styles[i][j][k] + C[i];
+		for(var k=0; k<styles[i][j].length; k++) {
+			if (typeof styles[i][j][k] != "string")
+				styles[i][j][k] += C[i];
+			}
 	}
 }
 
-//initStyles();
+initStyles();
 
 var mas = [[0, 0], [0,3], [0, 7], [0, 10], [0, 14], [0, 10], [0, 7], [0, 3]];
 var N = 0, N_ = 0;
@@ -164,7 +182,6 @@ var vol = 0.01;
 if (N == 0) chord = curChord; 
 
 if(chord < styles.length && chord >= 0) {
-//for(var i = 0; i<styles[chord].length; i++)
 	playChord(styles[chord][N], vol);
 N++;
 N = N % styles[chord].length;
@@ -179,15 +196,12 @@ N = N % styles[chord].length;
 }
 
 function playChord(arr, vol) {
-if (arr != -12) {
-	if (arr.length == undefined){
+	if (typeof arr != "object"){
 		playNote(arr, vol);
-	} else { 
-	
+	} else {
 	for(var i = 0; i<arr.length; i++)
 		playNote(arr[i], vol);
 		}
-	}
 }
 
 
