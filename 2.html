@@ -1,4 +1,8 @@
 <script>
+onload = function() {
+_js.remove(); 
+}
+
 window.AudioContext = window.AudioContext||window.webkitAudioContext;
 var context = new AudioContext();
 
@@ -12,7 +16,7 @@ gain.connect(context.destination);
 
 var channels = 2;
 
-var duration = 300;
+var duration = 250;
 
 var frameCount = context.sampleRate * duration/1000;
 
@@ -44,7 +48,7 @@ return (x>0) ? 1 : -1;
 }
 
 
-playSound = function(rate, volume, type) {
+playSound = function(rate, volume, type, attack, systain) {
 var curBuffer = bufferArray[0];
 var dc = new Date();
 var uninterruptedly = false, min = (+dc) - (+d[0]), i_min = 0, num = 0;
@@ -77,6 +81,22 @@ if (volume > 1) volume = 1;
     // This gives us the actual array that contains the data
     var nowBuffering = curBuffer.getChannelData(channel);
 
+if (attack==undefined) attack = 0.01;
+
+if (systain==undefined) systain = 1;
+
+function volumeF(x, L){
+var volume = 1;
+var X = x/L;
+if(attack != 0)
+	if(X < attack) volume *= X/attack;
+
+if(systain != 0) 
+	if(X > 1-systain) volume *= (-1/systain*(X-1))
+
+return volume;
+}
+
 
 if (type == "h") {
 	var frameLength = 2400;
@@ -87,7 +107,7 @@ if (type == "h") {
     for (var i = 0; i < frameCount; i++) {
       // Math.random() is in [0; 1.0]
       // audio needs to be in [-1.0; 1.0]
-      nowBuffering[i] = volume * dist(Math.sin(i * (rate * (1 + 0.0001 * Math.sin(i * 5 * Math.PI / 48000 * channels) )) * Math.PI / 48000 * channels)) * (1 - i/frameCount);
+      nowBuffering[i] = volume * dist(Math.sin(i * (rate * (1 + 0.0001 * Math.sin(i * 5 * Math.PI / 48000 * channels) )) * Math.PI / 48000 * channels)) * volumeF(i, frameCount);
     }
 	}
   }
@@ -111,7 +131,7 @@ source.connect(gain);
 source.start();
 }
 
-playNote = function(note, volume) {
+playNote = function(note, volume, attack, systain) {
 var rate = 440;
 var type = undefined;
 if(typeof note != "string") {
@@ -119,14 +139,21 @@ if(typeof note != "string") {
 	} else {
 	type = note;
 	}
-playSound(rate, volume, type);
+playSound(rate, volume, type, attack, systain);
 }
 
 var pushing = false;
 
 var a = [226, 90, 88, 67, 86, 66, 78, 77, 188, 190, 191, 16, 65, 83, 68, 70, 71, 72, 74, 75, 76, 186, 222, 220, 81, 87, 69, 82, 84, 89, 85, 73, 79, 80, 219, 221, 13];
+var chords=["C","Dm7","G","Fmaj7","Am7"];
+
 
 document.onkeydown = function(e) {
+if(contacts != undefined) {
+contacts.remove();
+contacts = undefined;
+}
+
 var k = e.keyCode;
 
 if(pushing) {
@@ -134,13 +161,22 @@ a.push(k);
 console.log(k, a.length);
 }
 
+if(k == 32)
+_chords.innerHTML = "||";
+
 for(var i=0; i<a.length; i++)
 	if(a[i] == k) {
 		if(!pushing) {
 		var vol = (100 - i) / 100 * 0.02;
-		if (i <= 11) curChord = i;
+		if (i <= 11) { 
+			curChord = i;
+			if (i < chords.length)
+			_chords.innerHTML = chords[i]; 
+			else	
+			_chords.innerHTML = "||";
+			}
 		else
-		playNote(i, vol);
+		playNote(i, vol, 0.0, 0.7);
 		}
 		break
 	}
@@ -148,12 +184,7 @@ if (k == 32) curChord = -1;
 }
 var chord = -1, curChord = chord;
 var styles = [
-[["h",0,7],["h",0,7],["h",0,7],["h",0,5]], [["h",0,7],["h",0,7],["h",0,7],["h",0,5]],
-[["h",0,7],["h",0,7],["h",0,7],["h",0,5]], [["h",0,7],["h",0,7],["h",0,7],["h",0,5]],
-[["h",0,7],["h",0,7],["h",0,7],["h",0,5]], [["h",0,7],["h",0,7],["h",0,7],["h",0,5]],
-[["h",0,7],["h",0,7],["h",0,7],["h",0,5]], [["h",0,7],["h",0,7],["h",0,7],["h",0,5]],
-[["h",0,7],["h",0,7],["h",0,7],["h",0,5]], [["h",0,7],["h",0,7],["h",0,7],["h",0,5]],
-[["h",0,7],["h",0,7],["h",0,7],["h",0,5]], [["h",0,7],["h",0,7],["h",0,7],["h",0,5]],
+[-12, 7, 12, 16],[2, 5, 12, 17],[-5, 7, 11, 14],[-7, 5, 9, 16],[-3, 9, 12, 19],
 ];
 
 function initStyles() {
@@ -172,7 +203,7 @@ for(var i=1; i<styles.length; i++)
 	}
 }
 
-initStyles();
+//initStyles();
 
 var mas = [[0, 0], [0,3], [0, 7], [0, 10], [0, 14], [0, 10], [0, 7], [0, 3]];
 var N = 0, N_ = 0;
@@ -214,22 +245,48 @@ function stopTimer() {
 clearInterval(t);
 }
 
-startTimer(440);
-
-
-
-
-
-
-
-
-
-
-
-
-
+startTimer(220);
 </script>
 
+<head>
+<meta http-equiv="Content-Type" Content="text/html; Charset=Windows-1251">
+</head>
 <body>
-
+<p id="contacts">
+Web Audio demo by Tishchenko Evgeny Victorovich
+e-mail: profmen_jek@mail.ru
+open-source and open for contribution and collaboration
+<p>
+Клавиши -- ноты
+<p>
+Keys -- Notes
+<p>
+Q||A -- C||до
+<p>
+E||D -- D||ре
+<p>
+T||G -- E||ми
+<p>
+Y||H -- F||фа
+<p>
+I||K -- G||соль
+<p>
+P||; -- A||ля
+<p>
+}||/ -- B||си
+<p>
+\             -- C
+<p>
+Z             -- Dm7
+<p>
+X             -- G
+<p>
+C             -- Fmaj7
+<p>
+V             -- Am7
+<p>
+Space||Пробел -- stop
+</p>
+<p id="_chords" style = "font-size: 100px" > || </p>
+<p id="_js" style = "font-size: 30px"> javascript not enabled яваскрипт не включен </p>
 </body>
