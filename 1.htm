@@ -1,0 +1,313 @@
+﻿<body>
+<p id="help" style="position: absolute"> На Enter ходить. Чтобы предложить атаку нажми на один квадрат и отпусти кнопку мышки на другом квадрате. F5 снова.</p>
+<canvas style="position: absolute" id="canvas" width = 500 height = 500>
+
+</body>
+<script>
+var c = canvas.getContext('2d');
+
+var MV=[], R=[], size = 50, fl = Math.floor;
+
+function drawObj(v) {
+var s=fl(v.mass).toString();
+var color = c.strokeStyle;
+c.strokeStyle = v.type;
+c.strokeRect(v.x, v.y, size, size);
+c.strokeStyle = color;
+c.fillText(s, v.x+25-2.8*s.length, v.y+28);
+}
+
+function clear() { 
+c.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function V(x, y, mass, type, n) {
+this.x = x;
+this.y = y;
+this.mass = mass;
+this.type = type;
+this.n = n;
+this.copy = function() {
+return new V(this.x, this.y, this.mass, this.type, this.n);
+}
+this.massarr = [];
+return this;
+}
+
+function createV(x, y, mass, type) {
+var n = MV.length;
+MV.push(new V(x, y, mass, type, n));
+}
+
+function draw() {
+clear();
+for(var i=0; i < MV.length; i++)
+	drawObj(MV[i]);
+for(var i=0; i < R.length; i++)
+	drawR(R[i]);
+}
+
+function drawR(r) {
+var x1 = MV[r.input].x, y1 = MV[r.input].y;
+var x2 = MV[r.output].x, y2 = MV[r.output].y;
+
+drawArrow(x1, y1, x2, y2, r.type, r.mass);
+}
+
+function drawArrow(inx, iny, outx, outy, color, mass) {
+inx += size/2;
+iny += size/2;
+outx += size/2;
+outy += size/2;
+var s = 15;
+
+var bool = inx > outx;
+if(inx == outx) bool = iny > outy;
+
+var str = fl(mass).toString();
+
+var _color = c.strokeStyle;
+c.strokeStyle = color;
+var _fillcolor = c.fillStyle;
+c.fillStyle = color;
+
+c.beginPath();
+c.moveTo(inx, iny);
+c.lineTo(outx, outy);
+c.stroke();
+c.strokeRect(outx-s, outy-s, 2*s, 2*s);
+c.fillRect((inx + outx)/2, (iny + outy)/2 + 15*(bool-0.25)-10, str.length*6, 10);
+
+
+c.strokeStyle = _color;
+c.fillStyle = _fillcolor;
+c.fillText(str, (inx + outx)/2, (iny + outy)/2 + 15*(bool-0.25));
+}
+
+var array = [];
+//////////////////////////////////////////////////////////
+function test() {
+send(0,1);
+send(2,1);
+}
+
+function pressEnter() {
+arrival();
+for(var i=0; i < MV.length; i++)
+	fight(i);
+growth(10,500);
+draw();
+}
+
+function growth(magnitude, max) {
+	for(var i=0; i < MV.length; i++) {
+	var v = MV[i];
+	if(v.mass < max)
+		v.mass += magnitude;
+	if(v.mass > max) v.mass = max;
+	}
+}
+
+
+
+function arrival() {
+while(R.length > 0)
+	arrive(R.pop());
+}
+
+function arrive(r) {
+var n = r.output;
+var v = MV[n];
+v.massarr.push({mass: r.mass, type: r.type});
+}
+
+function fight(n) {
+var v = MV[n];
+var arr = v.massarr;
+if (arr.length == 0) return false;
+
+arr.push({mass: v.mass, type: v.type});
+sum(arr);
+
+var n1 = findMaxWithoutX(arr, -1);
+var n2 = findMaxWithoutX(arr, n1);
+
+v.mass = arr[n1].mass - arr[n2].mass;
+v.type = arr[n1].type;
+v.massarr = [];
+}
+
+function sum(arr) {
+for(var i=0; i < arr.length; i++)
+if(arr[i].mass > 0) {
+	var cur_type = arr[i].type;
+
+	for(var j=i+1; j < arr.length; j++)
+	if(arr[j].type == cur_type) {
+		arr[i].mass += arr[j].mass;
+		arr[j].mass = 0;
+		}
+	}
+}
+
+function findMaxWithoutX(arr, x) {
+var max = -1, n = 0;
+for(var i=0; i < arr.length; i++) {
+	var mass = arr[i].mass;
+	if(max < mass && i != x) {
+		max = mass;
+		n = i;
+		}
+	}
+return n;
+}
+
+
+
+function isExist(x1, x2) {
+for(var i=0; i<R.length; i++)
+	if(R[i].input == x1 && R[i].output == x2)
+		return i;
+return -1;
+}
+
+function send(x1, x2) {
+var exist = isExist(x1, x2);
+if(exist == -1) {
+	R.push({input: x1, output: x2, mass: MV[x1].mass / 2, type: MV[x1].type});
+	} else {
+	R[exist].mass += MV[x1].mass / 2;
+	}
+MV[x1].mass /= 2;
+}
+
+
+
+var _input = -1;
+
+onkeydown = function(e) {
+if(help != null) {
+	help.remove();
+	help = null;
+	}
+var k = e.keyCode;
+if(k == 13)
+	pressEnter();
+}
+
+onmousedown = function(e) {
+var x = e.pageX, y = e.pageY;
+_input = findClickedV(x, y);
+console.log("_input = ", _input);
+}
+
+onmouseup = function(e) {
+var x = e.pageX, y = e.pageY;
+var _output = findClickedV(x, y);
+console.log("_output = ", _output);
+if(_input == -1 || _output == -1) return;
+if(_input == _output) return;
+send(_input, _output);
+draw();
+}
+
+function findClickedV(x, y) {
+for(var i=0; i < MV.length; i++) {
+	var v = MV[i];
+	if(x >= v.x && x <= v.x + size)
+	if(y >= v.y && y <= v.y + size)
+		return i;
+	}
+return -1
+}
+
+onmousemove = function() {draw()}
+
+createV(50, 100, 100, "#ff0000");
+createV(150, 100, 500, "#ffff00");
+createV(50, 200, 300, "#ff00ff");
+createV(200, 200, 300, "#aaaaaa");
+
+draw();
+
+//test();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function sending() {
+saveMassAndType();
+
+
+var arrarr=[];
+for(var j=0; j < MV.length; j++) {
+var arr = new Array();
+var v1 = MV[j];
+arr.push({mass: v1.mass, type: v1.type, n: v1.n});
+for(var i=0; i < v1.sendarr.length; i++) {
+	var v2 = v1.sendarr[i];
+	
+	arr.push({mass: v2.lastmass / 2, type: v2.lasttype, n: v2.n});
+	};
+arrarr.push(arr);
+}
+
+for(var j=0; j < arrarr.length; j++)
+	fight(arrarr[j], MV[j]);
+
+return arrarr;
+}
+</script>
