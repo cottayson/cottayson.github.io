@@ -1,0 +1,190 @@
+﻿<body style="margin: 0">
+<canvas style="position: absolute" id="canvas" width = 800 height = 500>
+</body>
+<script>
+var c = canvas.getContext('2d');
+
+var A = [], t;
+
+function options() {
+c.textAlign="center";
+c.textBaseline="middle";
+c.font="15px Times";
+}
+
+options();
+
+function clear() { 
+c.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function V(x, y, r, color) {
+this.x = x;
+this.y = y;
+this.vx = 0;
+this.vy = 0;
+this.r = r;
+this.drawing = function() {
+	var path = new Path2D();
+
+	path.moveTo(this.x+this.r, this.y);
+
+	path.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
+	c.stroke(path);
+	if(color != undefined) {
+		var memColor = c.fillStyle;
+		c.fillStyle = color;	
+		c.fill(path);
+		}
+	c.fillStyle = memColor;
+	var str = calcMass(this, "string");
+	c.fillText(str, this.x, this.y);
+	}
+this.moving = function() {
+	this.x += this.vx;
+	this.y += this.vy;
+	}
+this.bouncing = function(w, h) {
+	var x = this.x, y = this.y, r = this.r;
+	if(x < r) {
+		this.x = (r-x) + r;
+		this.vx *= -1;
+		}
+	if(y < r) {
+		this.y = (r-y) + r;
+		this.vy *= -1;
+		}
+	w -= r;
+	h -= r;
+	if(x > w) {
+		this.x = w-(x-w);
+		this.vx *= -1;
+		}
+	if(y > h) {
+		this.y = h-(y-h);
+		this.vy *= -1;
+		}
+	}
+}
+
+function strokeCircle(x, y, r) {
+c.ellipse(x,y,r,r,0,0,Math.PI*2);
+}
+
+
+function createV(x, y, r, color) {
+A.push(new V(x, y, r, color));
+}
+
+function draw() {
+for(var i=0; i < A.length; i++)
+	A[i].drawing();
+}
+
+function mainDraw() {
+clear();
+draw();
+c.strokeRect(0, 0, canvas.width, canvas.height);
+}
+
+
+function mainPhysics() {
+var width = canvas.width,
+    height = canvas.height;
+
+for(var i=0; i < A.length; i++){
+	A[i].moving();
+	A[i].bouncing(width, height);
+	}
+}
+
+function calcMass(v, type) {
+if(type == "string")
+	return Math.floor(v.r * v.r / 10).toString();
+return v.r * v.r / 10;
+}
+
+function step() {
+mainPhysics();
+mainDraw();
+}
+
+function createTimer(delta) {
+t = setInterval(step, delta);
+}
+
+function clearTimer() {
+clearInterval(t);
+}
+
+function setRandomSpeed(v, value) {
+var rnd = Math.random;
+v.vx = (rnd()*2 - 1)*value;
+v.vy = (rnd()*2 - 1)*value;
+}
+
+var color, rnd;
+for(var i=0; i<150; i++) {
+rnd = Math.random();
+color = "rgba(255, 0, 0, 0.7)";
+if(rnd > 0.5)
+color = "rgba(255, 255, 0, 0.5)";
+if(rnd > 0.7)
+ color = undefined;
+createV(500, 100, (Math.random()+2) * 5, color);
+setRandomSpeed(A[A.length - 1], 0.5);
+}
+
+createTimer(12);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</script>
