@@ -1,10 +1,10 @@
 ﻿<body style="margin: 0">
-<canvas style="position: absolute" id="canvas" width = 800 height = 500>
+<canvas style="position: absolute" id="canvas" width = 500 height = 300>
 </body>
 <script>
 var c = canvas.getContext('2d');
 
-var A = [], t;
+var A = [], t, timerEnable = true, delta = 8, alive = true, firstClick = false;
 
 function options() {
 c.textAlign="center";
@@ -18,12 +18,32 @@ function clear() {
 c.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-function V(x, y, r, color) {
-this.x = x;
-this.y = y;
+function V(o) {
+this.x = o.x;
+this.y = o.y;
 this.vx = 0;
 this.vy = 0;
-this.r = r;
+if(o.vx != undefined)
+	this.vx = o.vx;
+if(o.vy != undefined)
+	this.vy = o.vy;
+this.r = o.r;
+this.color = o.color;
+this.n = o.n;
+
+this.p = function() {
+var mass = this.m();
+return {x: mass * this.vx, y: mass * this.vy};
+}
+
+this.m = function() {
+if(this.free == true) return 0.1;
+return calcMass(this);
+}
+
+this.copy = function() {
+	return new V({x: this.x, y: this.y, r: this.r, vx: this.vx, vy: this.vy, color: this.color});
+	}
 this.drawing = function() {
 	var path = new Path2D();
 
@@ -31,13 +51,14 @@ this.drawing = function() {
 
 	path.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
 	c.stroke(path);
-	if(color != undefined) {
+	if(this.color != undefined) {
 		var memColor = c.fillStyle;
-		c.fillStyle = color;	
+		c.fillStyle = this.color;	
 		c.fill(path);
 		}
 	c.fillStyle = memColor;
 	var str = calcMass(this, "string");
+	if(str == "0") return;
 	c.fillText(str, this.x, this.y);
 	}
 this.moving = function() {
@@ -46,6 +67,7 @@ this.moving = function() {
 	}
 this.bouncing = function(w, h) {
 	var x = this.x, y = this.y, r = this.r;
+	if(r >= w/2 || r >= h/2) freeV(this);
 	if(x < r) {
 		this.x = (r-x) + r;
 		this.vx *= -1;
@@ -71,11 +93,6 @@ function strokeCircle(x, y, r) {
 c.ellipse(x,y,r,r,0,0,Math.PI*2);
 }
 
-
-function createV(x, y, r, color) {
-A.push(new V(x, y, r, color));
-}
-
 function draw() {
 for(var i=0; i < A.length; i++)
 	A[i].drawing();
@@ -85,28 +102,247 @@ function mainDraw() {
 clear();
 draw();
 c.strokeRect(0, 0, canvas.width, canvas.height);
+
+var h = 15;
+if(isWin()) {
+	c.fillText("Победа!",canvas.width/2, canvas.height/2);
+	c.fillText("Victory!",canvas.width/2, canvas.height/2+h);
+	}
+if(!firstClick && alive) {
+	c.fillText("СЕРЫЙ ЖИРНАЯ ТВАРЬ ТОЛЬКО И ДУМАЕТ КАК СОЖРАТЬ ТЕБЯ!!12111",canvas.width/2, canvas.height/2);
+	c.fillText("GREY FAT THING IS ONLY THINKING OF HOW TO EAT YOU!!12111",canvas.width/2, canvas.height/2 + h);
+	}
+if(!alive) {
+	c.fillText("БИЧ!!12111",canvas.width/2, canvas.height/2);
+	c.fillText("BITCH!!12111",canvas.width/2, canvas.height/2 + h);
+	}
+}
+
+function tS(x) {
+var minus = false;
+if (x < 0) {
+	x = Math.abs(x);
+	minus = true;
+	}
+var i = Math.floor(x*100);
+var left = Math.floor(i / 100);
+var right = i % 100;
+var str = left + "." + right;
+if(minus) str = "-"+str;
+return str;
+}
+
+function debugDraw() {
+ds = A.length.toString();
+c.textAlign="left";
+c.fillText(ds, 0, 100);
+c.textAlign="center";
+}
+///////////////////////////////////////////////////////////
+var ds = "";
+
+function collide() {
+for(var i=0; i < A.length; i++) {
+	var v1 = A[i];
+	for(var j = i + 1; j < A.length; j++) {
+		var v2 = A[j];
+		collidePair(v1, v2);
+		}
+	}
+}
+
+function collidePair(v1, v2) {
+if(!testCollide(v1, v2)) return;
+
+var R = distance(v1, v2);
+if(R < v1.r + v2.r) makeCollide(v1, v2);
+}
+
+function testCollide(v1, v2) {
+if(v1.free == true || v2.free == true) {
+	return false;
+	}
+var dx = Math.abs(v2.x - v1.x);
+var dy = Math.abs(v2.y - v1.y);
+if(dx < v1.r + v2.r && dy < v1.r + v2.r) return true;
+return false;
+}
+
+function calcMass(v, type) {
+if(type == "string")
+	return Math.floor(v.r * v.r / 10 + 0.5).toString();
+return v.r * v.r / 10;
 }
 
 
+function calcR(mass) {
+return Math.sqrt(mass * 10);
+}
+
+function distance(v1, v2) {
+var dx = v2.x - v1.x;
+var dy = v2.y - v1.y;
+return Math.sqrt(dx*dx + dy*dy);
+}
+
+function dm(v ,value) {
+v.r = calcR(v.m() + value);
+}
+
+
+function makeCollide(V1, V2) {
+var v1, v2;
+if(V1.r > V2.r) { 
+	v1 = V1; v2 = V2;
+	} else {
+	v1 = V2; v2 = V1;
+	}
+var p1 = v1.p(), p2 = v2.p(), mass = v2.m();
+
+var P = {x: p1.x + p2.x, y: p1.y + p2.y}, 
+	DM = (mass > 10) ? mass*0.05 : 0.5;
+
+dm(v1, DM);
+dm(v2, -DM);
+if(v2.r > 1) {
+	var new_p2 = v2.p(), mass = v1.m();
+	v1.vx = (P.x - new_p2.x) / mass;
+	v1.vy = (P.y - new_p2.y) / mass;
+	} else {
+	v2.free = true;
+	}
+	
+	
+
+//ds = "P = ["+ tS(P.x) +", "+ tS(P.y) +"] vx = "+ tS(v1.vx) +" , "+ tS(v2.vx);
+}
+
+
+createV({x: 300, y:150, r: 30, vy: 0.1, color: "rgba(255,255,0,0.5)"});
+createV({x: 100, y:150, r: 30, color: "rgba(0,255,0,0.5)"});
+
+createV({x: 150, y:150, r: 10, color: "rgba(125,255,0,0.5)"});
+
+createV({x: 170, y:150, r: 10, color: "rgba(255,255,0,0.5)"});
+
+createV({x: 200, y:250, r: 40, color: "rgba(255,0,0,0.5)"});
+
+createV({x: 300, y:60, r: 57, color: "rgba(125,125,125,0.5)"});
+
+function space() {
+pushRandomVs({x: 250, y: 250, r: 14, n: 10, amount: 5});
+}
+
+//*******************************************************
+
+function len(x, y) {
+return Math.sqrt(x*x + y*y);
+}
+
+function norm(x, y) {
+var L = len(x, y);
+if (L > 0) 
+	return {x: x/L, y: y/L};
+	else
+	return {x: 1, y: 0};
+}
+
+function punch(x, y) {
+firstClick = true;
+
+if(!alive) return;
+var v = A[0], coef = 0.1, vel = 1;
+var vect = norm(x - v.x, y - v.y);
+
+var v2 = v.copy();
+v2.color = undefined;
+
+v2.r = calcR(v.m()*coef);
+v.r = calcR(v.m() * (1 - coef));
+
+var dist = v.r + v2.r;
+dist *= 1.01;
+
+v2.x += dist * vect.x;
+v2.y += dist * vect.y;
+
+v2.vx += vel * vect.x;
+v2.vy += vel * vect.y;
+
+v.vx += vel * vect.x * -coef;
+v.vy += vel * vect.y * -coef;
+
+createV(v2);
+
+}
+
+function isWin() {
+if(alive && A.length == 1) return true;
+return false;
+}
+
+
+
+
+
+
+
+
+
+//*******************************************************
+function freeVs() {
+var L = A.length;
+for(var i=0; i < L; i++) {
+	if (A[i] == undefined) {
+	ds = i;
+	clearTimer();
+	return;
+	}
+	if (A[i].free == true) {
+		freeV(A[i]);
+		L--;
+		}
+	}
+}
+
+function freeV(v) {;
+var n = v.n;
+if (n == 0) alive = false
+if(n == A.length - 1) {
+	A.pop();
+	} else {
+	delete A[n];
+	A[n] = A.pop();
+	if(A[n] != undefined)
+		A[n].n = n;
+	}
+}
+
+function createV(object) {
+object.n = A.length;
+A.push(new V(object));
+}
+
+///////////////////////////////////////////////////////////
 function mainPhysics() {
 var width = canvas.width,
     height = canvas.height;
+
+collide();
+
+freeVs();
 
 for(var i=0; i < A.length; i++){
 	A[i].moving();
 	A[i].bouncing(width, height);
 	}
-}
 
-function calcMass(v, type) {
-if(type == "string")
-	return Math.floor(v.r * v.r / 10).toString();
-return v.r * v.r / 10;
 }
 
 function step() {
 mainPhysics();
 mainDraw();
+debugDraw();
 }
 
 function createTimer(delta) {
@@ -123,19 +359,41 @@ v.vx = (rnd()*2 - 1)*value;
 v.vy = (rnd()*2 - 1)*value;
 }
 
-var color, rnd;
-for(var i=0; i<15; i++) {
-rnd = Math.random();
-color = "rgba(255, 0, 0, 0.7)";
-if(rnd > 0.5)
-color = "rgba(255, 255, 0, 0.5)";
-if(rnd > 0.7)
- color = undefined;
-createV(500, 100, (Math.random()+2) * 5, color);
-setRandomSpeed(A[A.length - 1], 0.5);
+//input*****input*****input*****input*****input*****input
+
+oncontextmenu = function() {
+return false;
 }
 
-createTimer(5);
+onmousedown = function(e) {
+punch(e.pageX, e.pageY);
+}
+
+onkeydown = function(e) {
+if(e.keyCode == 13) {
+	if(timerEnable)
+		clearTimer();
+	else
+		createTimer(delta);
+	timerEnable = !timerEnable;
+	}
+if(e.keyCode == 32) space();
+}
+
+//input*****input*****input*****input*****input*****input
+
+function pushRandomVs(opt) {
+for(var i=0; i < opt.n; i++) {
+	var v = new V({x: opt.x, y: opt.y , r: opt.r});
+	v.x += (Math.random()-0.5)*300;
+	v.y += (Math.random()-0.5)*300;
+	v.vx = (Math.random()-0.5) * opt.amount;
+	v.vy = (Math.random()-0.5) * opt.amount;
+	createV(v);
+	}
+}
+
+createTimer(delta);
 
 
 
