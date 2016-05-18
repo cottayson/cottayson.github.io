@@ -1,5 +1,6 @@
 ﻿<body style="margin: 0">
 <textarea id="l" style="position: absolute; top: 310; height: 300;"></textarea>
+<button id="ay" style="position: absolute; top: 310; left: 200" >apply</button>
 <canvas style="position: absolute" id="canvas" width = 500 height = 300>
 </body>
 <script>
@@ -249,6 +250,9 @@ if (L > 0)
 }
 
 function punch(x, y) {
+if(!(x <= canvas.width &&  y <= canvas.height))
+   return;
+
 firstClick = true;
 
 if(!alive) return;
