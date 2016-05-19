@@ -1,0 +1,554 @@
+﻿<body style="margin: 0">
+<textarea id="l" style="position: absolute; top: 310; height: 300; width: 500;"></textarea>
+<button id="replay" style="position: absolute; top: 310; left: 510" >watch replay</button>
+<button id="fastButton" style="position: absolute; top: 350; left: 510" >fast</button>
+<button id="normalButton" style="position: absolute; top: 375; left: 510" >normal</button>
+<button id="slowButton" style="position: absolute; top: 400; left: 510" >slow</button>
+<button id="newGameButton" style="position: absolute; top: 250; left: 510" >NEW GAME</button>
+<canvas style="position: absolute" id="canvas" width = 500 height = 300>
+</body>
+<script>
+var c = canvas.getContext('2d');
+
+var A = [], t, timerEnable = true, delta = 8, alive = true, firstClick = false, win = false, replaying = false, speed = 1;
+
+var Replay = [];
+
+function options() {
+c.textAlign="center";
+c.textBaseline="middle";
+c.font="15px Times";
+}
+
+options();
+
+function clear() { 
+c.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function V(o) {
+this.x = o.x;
+this.y = o.y;
+this.vx = 0;
+this.vy = 0;
+if(o.vx != undefined)
+	this.vx = o.vx;
+if(o.vy != undefined)
+	this.vy = o.vy;
+this.r = o.r;
+this.color = o.color;
+this.n = o.n;
+
+this.p = function() {
+var mass = this.m();
+return {x: mass * this.vx, y: mass * this.vy};
+}
+
+this.m = function() {
+if(this.free == true) return 0.1;
+return calcMass(this);
+}
+
+this.copy = function() {
+	return new V({x: this.x, y: this.y, r: this.r, vx: this.vx, vy: this.vy, color: this.color});
+	}
+this.drawing = function() {
+	var path = new Path2D();
+
+	path.moveTo(this.x+this.r, this.y);
+
+	path.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
+	c.stroke(path);
+	if(this.color != undefined) {
+		var memColor = c.fillStyle;
+		c.fillStyle = this.color;	
+		c.fill(path);
+		}
+	c.fillStyle = memColor;
+	var str = calcMass(this, "string");
+	if(str == "0") return;
+	c.fillText(str, this.x, this.y);
+	}
+this.moving = function() {
+	this.x += this.vx;
+	this.y += this.vy;
+	}
+this.bouncing = function(w, h) {
+	var x = this.x, y = this.y, r = this.r;
+	if(r >= w/2 || r >= h/2) freeV(this);
+	if(x < r) {
+		this.x = (r-x) + r;
+		this.vx *= -1;
+		}
+	if(y < r) {
+		this.y = (r-y) + r;
+		this.vy *= -1;
+		}
+	w -= r;
+	h -= r;
+	if(x > w) {
+		this.x = w-(x-w);
+		this.vx *= -1;
+		}
+	if(y > h) {
+		this.y = h-(y-h);
+		this.vy *= -1;
+		}
+	}
+}
+
+function strokeCircle(x, y, r) {
+c.ellipse(x,y,r,r,0,0,Math.PI*2);
+}
+
+function draw() {
+for(var i=0; i < A.length; i++)
+	A[i].drawing();
+}
+
+function mainDraw() {
+clear();
+draw();
+c.strokeRect(0, 0, canvas.width, canvas.height);
+/*
+var h = 15;
+if(isWin()) {
+	c.fillText("Победа!",canvas.width/2, canvas.height/2);
+	c.fillText("Victory!",canvas.width/2, canvas.height/2+h);
+	}
+if(!firstClick && alive) {
+	c.fillText("СЕРЫЙ ЖИРНАЯ ТВАРЬ ТОЛЬКО И ДУМАЕТ КАК СОЖРАТЬ ТЕБЯ!!12111",canvas.width/2, canvas.height/2);
+	c.fillText("GREY FAT THING IS ONLY THINKING OF HOW TO EAT YOU!!12111",canvas.width/2, canvas.height/2 + h);
+	}
+if(!alive) {
+	c.fillText("БИЧ!!12111",canvas.width/2, canvas.height/2);
+	c.fillText("BITCH!!12111",canvas.width/2, canvas.height/2 + h);
+	}
+*/
+}
+
+function tS(x) {
+var minus = false;
+if (x < 0) {
+	x = Math.abs(x);
+	minus = true;
+	}
+var i = Math.floor(x*100);
+var left = Math.floor(i / 100);
+var right = i % 100;
+var str = left + "." + right;
+if(minus) str = "-"+str;
+return str;
+}
+
+function debugDraw() {
+c.textAlign="left";
+c.fillText(ds, 0, 100);
+c.textAlign="center";
+}
+///////////////////////////////////////////////////////////
+var ds = "";
+
+function collide() {
+for(var i=0; i < A.length; i++) {
+	var v1 = A[i];
+	for(var j = i + 1; j < A.length; j++) {
+		var v2 = A[j];
+		collidePair(v1, v2);
+		}
+	}
+}
+
+function collidePair(v1, v2) {
+if(!testCollide(v1, v2)) return;
+
+var R = distance(v1, v2);
+if(R < v1.r + v2.r) makeCollide(v1, v2);
+}
+
+function testCollide(v1, v2) {
+if(v1.free == true || v2.free == true) {
+	return false;
+	}
+var dx = Math.abs(v2.x - v1.x);
+var dy = Math.abs(v2.y - v1.y);
+if(dx < v1.r + v2.r && dy < v1.r + v2.r) return true;
+return false;
+}
+
+function calcMass(v, type) {
+if(type == "string")
+	return Math.floor(v.r * v.r / 10 + 0.5).toString();
+return v.r * v.r / 10;
+}
+
+
+function calcR(mass) {
+return Math.sqrt(mass * 10);
+}
+
+function distance(v1, v2) {
+var dx = v2.x - v1.x;
+var dy = v2.y - v1.y;
+return Math.sqrt(dx*dx + dy*dy);
+}
+
+function dm(v ,value) {
+v.r = calcR(v.m() + value);
+}
+
+
+function makeCollide(V1, V2) {
+var v1, v2;
+if(V1.r > V2.r) { 
+	v1 = V1; v2 = V2;
+	} else {
+	v1 = V2; v2 = V1;
+	}
+var p1 = v1.p(), p2 = v2.p(), mass = v2.m();
+
+var P = {x: p1.x + p2.x, y: p1.y + p2.y}, 
+	DM = (mass > 10) ? mass*0.05 : 0.5;
+
+dm(v1, DM);
+dm(v2, -DM);
+if(v2.r > 1) {
+	var new_p2 = v2.p(), mass = v1.m();
+	v1.vx = (P.x - new_p2.x) / mass;
+	v1.vy = (P.y - new_p2.y) / mass;
+	} else {
+	v2.free = true;
+	}
+}
+var N = 0;
+
+//*******************************************************
+function replayPunch() {
+for(var i = 0; i < Replay.length; i++) {
+	var o = Replay[i];
+	if(o.t == N)
+		punch(o.x, o.y);
+	}
+}
+
+function punch(x, y) {
+if(!(x <= canvas.width &&  y <= canvas.height))
+   return;
+
+firstClick = true;
+
+if(!alive || win) return;
+
+if(!replaying) {
+	Replay.push({x: x, y: y, t: N});
+	writeReplay();
+}
+
+var v = A[0], coef = 0.1, vel = 1;
+var vect = norm(x - v.x, y - v.y);
+
+var v2 = v.copy();
+v2.color = undefined;
+
+v2.r = calcR(v.m()*coef);
+v.r = calcR(v.m() * (1 - coef));
+
+var dist = v.r + v2.r;
+dist *= 1.01;
+
+v2.x += dist * vect.x;
+v2.y += dist * vect.y;
+
+v2.vx += vel * vect.x;
+v2.vy += vel * vect.y;
+
+v.vx += vel * vect.x * -coef;
+v.vy += vel * vect.y * -coef;
+
+createV(v2);
+
+}
+
+function isWin() {
+if(win) return true;
+if(alive && A.length == 1) {
+win = true;
+return true;
+}
+return false;
+}
+
+function len(x, y) {
+return Math.sqrt(x*x + y*y);
+}
+
+function norm(x, y) {
+var L = len(x, y);
+if (L > 0) 
+	return {x: x/L, y: y/L};
+	else
+	return {x: 1, y: 0};
+}
+
+
+function isDigit(str) {
+if (str.length == 0) return false;
+for(var i=0; i < str.length; i++) {
+	var char = str[i];
+	if (!(char >= "0" && char <= "9")) return false;
+	}
+return true;
+}
+
+function readReplay(str) {
+var R = [], s="";
+
+for(var i=0; i<str.length; i++) {
+	var char = str[i];
+	if(char == ",") char = " ";
+	s += char;
+	}
+
+s = s.trim();
+
+var arr = s.split(" ");
+
+if(arr.length % 3 != 0) return [];
+
+for(var i=0; i < arr.length; i++)
+	if(!isDigit(arr[i])) return [];
+
+
+for(var i=0; i < arr.length; i += 3)
+	R.push({x: +arr[i], y: +arr[i+1], t: +arr[i+2]});
+return R;
+}
+
+function writeReplay() {
+l.value = "";
+for(var i=0; i<Replay.length; i++) {
+	var str = "", o = Replay[i];
+	str += o.x+" ";
+	str += o.y+" ";
+	str += o.t+",";
+	l.value += str;
+	}
+}
+//*******************************************************
+function freeVs() {
+var L = A.length;
+for(var i=0; i < L; i++) {
+	if (A[i] == undefined) {
+	ds = i;
+	clearTimer();
+	return;
+	}
+	if (A[i].free == true) {
+		freeV(A[i]);
+		L--;
+		}
+	}
+}
+
+function freeV(v) {;
+var n = v.n;
+if (n == 0) alive = false
+if(n == A.length - 1) {
+	A.pop();
+	} else {
+	delete A[n];
+	A[n] = A.pop();
+	if(A[n] != undefined)
+		A[n].n = n;
+	}
+}
+
+function createV(object) {
+object.n = A.length;
+A.push(new V(object));
+}
+
+///////////////////////////////////////////////////////////
+function mainPhysics() {
+var width = canvas.width,
+    height = canvas.height;
+
+creation();
+
+collide();
+
+freeVs();
+
+for(var i=0; i < A.length; i++){
+	A[i].moving();
+	A[i].bouncing(width, height);
+	}
+
+}
+
+function step() {
+for(var i=0; i < speed; i++) {
+if(replaying) replayPunch();
+mainPhysics();
+N++;
+}
+mainDraw();
+debugDraw();
+}
+
+function createTimer(delta) {
+t = setInterval(step, delta);
+}
+
+function clearTimer() {
+clearInterval(t);
+}
+
+function setRandomSpeed(v, value) {
+var rnd = Math.random;
+v.vx = (rnd()*2 - 1)*value;
+v.vy = (rnd()*2 - 1)*value;
+}
+
+//input*****input*****input*****input*****input*****input
+
+function recreateTimer() {
+clearTimer(); createTimer(delta);
+}
+
+newGameButton.onclick = function() {
+Replay = [];
+replaying = false;
+init();
+}
+
+fastButton.onclick = function() {speed = 5; delta = 8; recreateTimer();}
+normalButton.onclick = function() {speed = 1; delta = 8; recreateTimer();}
+slowButton.onclick = function() {speed = 1; delta = 24; recreateTimer();}
+
+replay.onclick = function() {
+replaying = true;
+var R = readReplay(l.value);
+ds="";
+if(R.length > 0) 
+	Replay = R;
+	else
+	ds = "Error load replay, Ошибка загрузки риплея";
+init();
+}
+
+
+oncontextmenu = function() {
+return false;
+}
+
+onmousedown = function(e) {
+if(!replaying)
+	punch(e.pageX, e.pageY);
+}
+
+onkeydown = function(e) {
+
+if(e.keyCode == 13) {
+	if(timerEnable)
+		clearTimer();
+	else
+		createTimer(delta);
+	timerEnable = !timerEnable;
+	}
+
+if(e.keyCode == 32) space();
+}
+
+//input*****input*****input*****input*****input*****input
+
+function pushRandomVs(opt) {
+for(var i=0; i < opt.n; i++) {
+	var v = new V({x: opt.x, y: opt.y , r: opt.r});
+	v.x += (Math.random()-0.5)*300;
+	v.y += (Math.random()-0.5)*300;
+	v.vx = (Math.random()-0.5) * opt.amount;
+	v.vy = (Math.random()-0.5) * opt.amount;
+	createV(v);
+	}
+}
+
+init();
+createTimer(delta);
+//476 244 77,10 183 1609,492 246 2848, dmitry
+//476 244 77,492 246 5000, два хода
+
+
+
+
+function creation() {
+//if(N % 20 == 0) 
+//	createV({x: 5, y: 5, r: 5, vx: 1, vy: 1, color: "#00ff00"});
+}
+
+
+
+function init() {
+alive = true; firstClick = false; win = false;
+A = [];
+N = 0;
+
+createV({x: 300, y:150, r: 30, color: "rgba(255,0,0,0.5)"});
+var r = 35;
+for(var i=0; i < 5; i++)
+createV({x: 100+i*r*2, y:60, r: r, color: "rgba(125,125,125,0.5)"});
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</script>
