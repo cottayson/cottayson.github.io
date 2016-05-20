@@ -258,7 +258,7 @@ if(!alive || win) return;
 
 if(!replaying) {
 	Replay.push({x: x, y: y, t: N});
-	writeZeroReplay();
+	writeReplay();
 }
 
 var v = A[0], coef = 0.1, vel = 1;
@@ -350,13 +350,6 @@ for(var i=0; i<Replay.length; i++) {
 	str += o.t+",";
 	l.value += str;
 	}
-}
-
-function writeZeroReplay() {
-var t0 = Replay[0].t;
-for(var i=0; i < Replay.length; i++)
-	Replay[i].t -= t0;
-writeReplay();
 }
 //*******************************************************
 function freeVs() {
