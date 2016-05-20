@@ -27,7 +27,7 @@ for(var i=0; i < ids.length; i++) {
 
 var c = canvas.getContext('2d');
 
-var A = [], t, timerEnable = true, delta = 8, alive = true, firstClick = false, win = false, replaying = false, speed = 1;
+var A = [], t, timerEnable = true, delta = 8, alive = true, firstClick = false, win = false, replaying = false, speed = 3;
 
 var Replay = [];
 
@@ -127,13 +127,12 @@ function mainDraw() {
 clear();
 draw();
 c.strokeRect(0, 0, canvas.width, canvas.height);
-
+/*
 var h = 15;
 if(isWin()) {
-	c.fillText("пятюню, братан! Извини ты мне не брат",canvas.width/2, canvas.height/2);
-	//c.fillText("Victory!",canvas.width/2, canvas.height/2+h);
+	c.fillText("Победа!",canvas.width/2, canvas.height/2);
+	c.fillText("Victory!",canvas.width/2, canvas.height/2+h);
 	}
-/*
 if(!firstClick && alive) {
 	c.fillText("СЕРЫЙ ЖИРНАЯ ТВАРЬ ТОЛЬКО И ДУМАЕТ КАК СОЖРАТЬ ТЕБЯ!!12111",canvas.width/2, canvas.height/2);
 	c.fillText("GREY FAT THING IS ONLY THINKING OF HOW TO EAT YOU!!12111",canvas.width/2, canvas.height/2 + h);
@@ -313,7 +312,7 @@ function isDigit(str) {
 if (str.length == 0) return false;
 for(var i=0; i < str.length; i++) {
 	var char = str[i];
-	if (!(char >= "0" && char <= "9")) return false;
+	if (!((char >= "0" && char <= "9") || char == "-")) return false;
 	}
 return true;
 }
@@ -415,11 +414,11 @@ debugDraw();
 }
 
 function createTimer(delta) {
-t = setInterval(step, delta);
+//t = setInterval(step, delta);
 }
 
 function clearTimer() {
-clearInterval(t);
+//clearInterval(t);
 }
 
 function setRandomSpeed(v, value) {
@@ -440,9 +439,9 @@ replaying = false;
 init();
 }
 
-fastButton.onclick = function() {speed = 5; delta = 8; recreateTimer();}
-normalButton.onclick = function() {speed = 1; delta = 8; recreateTimer();}
-slowButton.onclick = function() {speed = 1; delta = 24; recreateTimer();}
+fastButton.onclick = function() {speed = 15; delta = 8;}
+normalButton.onclick = function() {speed = 3; delta = 8;}
+slowButton.onclick = function() {speed = 1; delta = 8;}
 
 replay.onclick = function() {
 replaying = true;
@@ -457,7 +456,7 @@ init();
 
 
 oncontextmenu = function() {
-//return false;
+return false;
 }
 
 onmousedown = function(e) {
@@ -492,7 +491,7 @@ for(var i=0; i < opt.n; i++) {
 }
 
 init();
-createTimer(delta);
+//createTimer(delta);
 //476 244 77,10 183 1609,492 246 2848, dmitry
 //476 244 77,492 246 5000, два хода
 
@@ -517,14 +516,18 @@ for(var i=0; i < 9; i++)
 createV({x: 100+i*r*2, y:60, r: r, color: "rgba(125,125,125,0.5)"});
 }
 
+function startTimer() {
+   stepR();
+}
 
+function stepR() {
+setTimeout(function() {
+        requestAnimationFrame(stepR);
+        step();
+    }, delta);
+}
 
-
-
-
-
-
-
+startTimer();
 
 
 
