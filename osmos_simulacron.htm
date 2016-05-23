@@ -1,4 +1,4 @@
-<body style="margin: 0">
+﻿<body style="margin: 0">
 <textarea id="l" style="position: absolute; top: 310; height: 300; width: 500;"></textarea>
 <button id="newGameButton" style="position: absolute; top: 310; left: 510;" >NEW GAME</button>
 <button id="replay" style="position: absolute; top: 350; left: 510;" >watch replay</button>
@@ -571,16 +571,20 @@ setTimeout(function() {
 
 function creation() {
 if(N % 50 == 0) {
-	createV({x: 5, y: 5, r: 5, vx: 1, vy: 1, anti: true, color: "#00FF00"});
-	createV({x: 1000, y: 5, r: 5, vx: -1, vy: 1, color: "#FFFF00"});
+	createV({x: 5, y: 5, r: 5, vx: 1, vy: -1, anti: true, color: "rgba(0,255,0,0.5)"});
+	createV({x: 995, y: 5, r: 5, vx: -1, vy: 1, color: undefined});
 	}
 }
+
+
+
 function init() {
 alive = true; firstClick = false; win = false;
 A = [];
 N = 0;
-createV({x: 200, y: 150, r: 30, vx: 0.1, color: "rgba(255,0,0,0.5)"});
-createV({x: 300, y: 150, r: 30, vx: -0.1, anti: true, color: "rgba(0,255,0,0.5)"});
+
+createV({x: 200, y: 150, r: 30, color: "rgba(255,255,0,0.8)"});
+createV({x: 300, y: 150, r: 30, anti: true, color: "rgba(0,255,0,0.8)"});
 }
 
 
