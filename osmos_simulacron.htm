@@ -1,4 +1,4 @@
-﻿<body style="margin: 0">
+<body style="margin: 0">
 <textarea id="l" style="position: absolute; top: 310; height: 300; width: 500;"></textarea>
 <button id="newGameButton" style="position: absolute; top: 310; left: 510;" >NEW GAME</button>
 <button id="replay" style="position: absolute; top: 350; left: 510;" >watch replay</button>
@@ -164,7 +164,9 @@ return str;
 
 function debugDraw() {
 c.textAlign="left";
-c.fillText(ds, 0, 100);
+c.textBaseline="bottom";
+c.fillText(ds, 0, canvas.height);
+c.textBaseline="middle";
 c.textAlign="center";
 }
 ///////////////////////////////////////////////////////////
@@ -228,7 +230,7 @@ if(V1.r > V2.r) {
 	} else {
 	v1 = V2; v2 = V1;
 	}
-
+/*
 if(v1 == undefined) {
 v1.free = true;
 return;
@@ -237,13 +239,22 @@ if(v2 == undefined) {
 v2.free = true;
 return;
 }
+*/
 mass = v1.m() + v2.m();
 var p1 = v1.p(), p2 = v2.p();
 var P = {x: p1.x + p2.x, y: p1.y + p2.y};
 var v0 = {x: P.x / mass, y: P.y / mass};
 
 mass = v2.m();
-DM = (mass > 10) ? mass*0.05 : 0.5;
+
+var dist = distance(v1, v2);
+
+var dr = dist - (v1.r + v2.r);
+
+//DM = (mass > 10) ? mass*0.05 : 0.5;
+
+DM = dr * dr;
+
 if(DM > v2.m()) DM = v2.m();
 
 
@@ -252,7 +263,7 @@ dm(v1, -DM);
 dm(v2, -DM);
 mass = v1.m() + v2.m();
 var m1 = v1.m(), m2 = v2.m();
-if(v1.r <= 0) 
+if(v1.r <= 0.00001) 
 	v1.free = true;
 if(v2.r > 0.1) {
 	//v0.x = (v1.vx * m1 + v2.vx * m2) / mass;
@@ -278,7 +289,6 @@ if(v2.r > 0.1) {
 	v2.r = 0;
 	v2.free = true;
 	}
-
 }
 var N = 0;
 
@@ -447,7 +457,7 @@ for(var i=0; i < A.length; i++){
 	A[i].moving();
 	A[i].bouncing(width, height);
 	}
-ds = tS(mass);
+ds = A.length.toString()+", "+mass.toString();
 
 }
 
@@ -543,26 +553,7 @@ init();
 //476 244 77,10 183 1609,492 246 2848, dmitry
 //476 244 77,492 246 5000, два хода
 
-
-
-
-function creation() {
-if(N % 50 == 0) {
-	createV({x: 5, y: 5, r: 5, vx: 1, vy: 1, anti: true, color: "#00FF00"});
-	createV({x: 1000, y: 5, r: 5, vx: -1, vy: 1, color: "#FFFF00"});
-	}
-}
-
-
-
-function init() {
-alive = true; firstClick = false; win = false;
-A = [];
-N = 0;
-
-createV({x: 200, y: 150, r: 30, vx: 0.1, color: "rgba(255,0,0,0.5)"});
-createV({x: 300, y: 150, r: 30, vx: -0.1, anti: true, color: "rgba(0,255,0,0.5)"});
-}
+startTimer();
 
 function startTimer() {
    stepR();
@@ -576,7 +567,21 @@ setTimeout(function() {
     }, delta);
 }
 
-startTimer();
+
+
+function creation() {
+if(N % 50 == 0) {
+	createV({x: 5, y: 5, r: 5, vx: 1, vy: 1, anti: true, color: "#00FF00"});
+	createV({x: 1000, y: 5, r: 5, vx: -1, vy: 1, color: "#FFFF00"});
+	}
+}
+function init() {
+alive = true; firstClick = false; win = false;
+A = [];
+N = 0;
+createV({x: 200, y: 150, r: 30, vx: 0.1, color: "rgba(255,0,0,0.5)"});
+createV({x: 300, y: 150, r: 30, vx: -0.1, anti: true, color: "rgba(0,255,0,0.5)"});
+}
 
 
 
