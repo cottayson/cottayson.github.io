@@ -1,12 +1,15 @@
 ﻿<body style="margin: 0">
-<textarea id="l" style="position: absolute; top: 310; height: 300; width: 500;"></textarea>
-<button id="newGameButton" style="position: absolute; top: 310; left: 510;" >NEW GAME</button>
-<button id="replay" style="position: absolute; top: 350; left: 510;" >watch replay</button>
-<button id="fastButton" style="position: absolute; top: 400; left: 510;" >fast</button>
-<button id="normalButton" style="position: absolute; top: 425; left: 510;" >normal</button>
-<button id="slowButton" style="position: absolute; top: 450; left: 510;" >slow</button>
-<canvas style="position: absolute;" id="canvas" width = 1000 height = 300>
+<textarea id="l" style="position: absolute; top: 510; height: 300; width: 500;"></textarea>
+<button id="newGameButton" style="position: absolute; top: 510; left: 510;" >NEW GAME</button>
+<button id="replay" style="position: absolute; top: 550; left: 510;" >watch replay</button>
+<button id="fastButton" style="position: absolute; top: 600; left: 510;" >fast</button>
+<button id="normalButton" style="position: absolute; top: 625; left: 510;" >normal</button>
+<button id="slowButton" style="position: absolute; top: 650; left: 510;" >slow</button>
+<canvas style="position: absolute;" id="canvas" width = 500 height = 500>
 </body>
+<script>
+!function(a,b){function c(c,j,k){var n=[];j=1==j?{entropy:!0}:j||{};var s=g(f(j.entropy?[c,i(a)]:null==c?h():c,3),n),t=new d(n),u=function(){for(var a=t.g(m),b=p,c=0;q>a;)a=(a+c)*l,b*=l,c=t.g(1);for(;a>=r;)a/=2,b/=2,c>>>=1;return(a+c)/b};return u.int32=function(){return 0|t.g(4)},u.quick=function(){return t.g(4)/(4*(1<<30))},u["double"]=u,g(i(t.S),a),(j.pass||k||function(a,c,d,f){return f&&(f.S&&e(f,t),a.state=function(){return e(t,{})}),d?(b[o]=a,c):a})(u,s,"global"in j?j.global:this==b,j.state)}function d(a){var b,c=a.length,d=this,e=0,f=d.i=d.j=0,g=d.S=[];for(c||(a=[c++]);l>e;)g[e]=e++;for(e=0;l>e;e++)g[e]=g[f=s&f+a[e%c]+(b=g[e])],g[f]=b;(d.g=function(a){for(var b,c=0,e=d.i,f=d.j,g=d.S;a--;)b=g[e=s&e+1],c=c*l+g[s&(g[e]=g[f=s&f+b])+(g[f]=b)];return d.i=e,d.j=f,c})(l)}function e(a,b){return b.i=a.i,b.j=a.j,b.S=a.S.slice(),b}function f(a,b){var c,d=[],e=typeof a;if(b&&"object"==e)for(c in a)try{d.push(f(a[c],b-1))}catch(g){}return d.length?d:"string"==e?a:a+"\0"}function g(a,b){for(var c,d=a+"",e=0;e<d.length;)b[s&e]=s&(c^=19*b[s&e])+d.charCodeAt(e++);return i(b)}function h(){try{if(j)return i(j.randomBytes(l));var b=new Uint8Array(l);return(k.crypto||k.msCrypto).getRandomValues(b),i(b)}catch(c){var d=k.navigator,e=d&&d.plugins;return[+new Date,k,e,k.screen,i(a)]}}function i(a){return String.fromCharCode.apply(0,a)}var j,k=this,l=256,m=6,n=52,o="random",p=b.pow(l,m),q=b.pow(2,n),r=2*q,s=l-1;if(b["seed"+o]=c,g(b.random(),a),"object"==typeof module&&module.exports){module.exports=c;try{j=require("crypto")}catch(t){}}else"function"==typeof define&&define.amd&&define(function(){return c})}([],Math);
+</script>
 <script>
 var MARGIN = 30;
 setMargin(MARGIN);
@@ -29,7 +32,32 @@ var c = canvas.getContext('2d');
 
 var A = [], t, timerEnable = true, delta = 8, alive = true, firstClick = false, win = false, replaying = false, speed = 3;
 
+var tablet = false;
+
+canvas.addEventListener('touchstart', function(e) {
+	punch(e.touches[0].pageX - MARGIN, e.touches[0].pageY - MARGIN);
+	tablet = true;
+});
+
+
 var Replay = [];
+
+var cam = {x: 0, y: 0, memx: 0, memy: 0, zoom: 1, memzoom: 1, w: canvas.width, h: canvas.height};
+cam.getX = function() {
+return this.x * this.zoom - this.w / 2;
+}
+
+cam.getY = function() {
+return this.y * this.zoom - this.h / 2;
+}
+
+cam.toX = function(x) {
+return x * cam.zoom - cam.getX();
+}
+
+cam.toY = function(y) {
+return y * cam.zoom - cam.getY();
+}
 
 function options() {
 c.textAlign="center";
@@ -65,7 +93,6 @@ return {x: mass * this.vx, y: mass * this.vy};
 }
 
 this.m = function() {
-//if(this.free == true) return 0;
 return calcMass(this);
 }
 
@@ -74,10 +101,13 @@ this.copy = function() {
 	}
 this.drawing = function() {
 	var path = new Path2D();
+	var x = cam.toX(this.x),  y = cam.toY(this.y), r = this.r * cam.zoom;
+	if(x - r > canvas.width || x + r < 0) return;
+	if(y - r > canvas.height || y + r < 0) return;
 
-	path.moveTo(this.x+this.r, this.y);
+	path.moveTo(x + r, y);
 
-	path.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
+	path.arc(x, y, r, 0, 2 * Math.PI);
 	c.stroke(path);
 	if(this.color != undefined) {
 		var memColor = c.fillStyle;
@@ -86,8 +116,9 @@ this.drawing = function() {
 		}
 	c.fillStyle = memColor;
 	var str = calcMass(this, "string");
+	if(r < str.length*5) return;
 	if(str == "0") return;
-	c.fillText(str, this.x, this.y);
+	c.fillText(str, x, y);
 	}
 this.moving = function() {
 	this.x += this.vx;
@@ -129,7 +160,7 @@ for(var i=0; i < A.length; i++)
 function mainDraw() {
 clear();
 draw();
-c.strokeRect(0, 0, canvas.width, canvas.height);
+c.strokeRect(cam.toX(0), cam.toY(0), canvas.width * cam.zoom, canvas.height * cam.zoom);
 /*
 var h = 15;
 if(isWin()) {
@@ -272,6 +303,8 @@ if(v2.r > 0.1) {
 	v1.vy = (v0.y * mass - v2.vy * m2) / m1;
 	} else {
 	dm(v1, -v2.m());
+	v1.vx = v0.x;
+	v1.vy = v0.y;
 	v2.r = 0;
 	v2.free = true;
 	}
@@ -280,12 +313,15 @@ return;
 
 dm(v1, DM);
 dm(v2, -DM);
+mass = v1.m();
 if(v2.r > 0.1) {
-	var new_p2 = v2.p(); mass = v1.m();
+	var new_p2 = v2.p();
 	v1.vx = (P.x - new_p2.x) / mass;
 	v1.vy = (P.y - new_p2.y) / mass;
 	} else {
 	dm(v1, v2.m());
+	v1.vx = P.x / mass;
+	v1.vy = P.y / mass;
 	v2.r = 0;
 	v2.free = true;
 	}
@@ -314,8 +350,11 @@ if(!replaying) {
 	writeReplay();
 }
 
-var v = A[0], coef = 0.1, vel = 1;
-var vect = norm(x - v.x, y - v.y);
+var v = A[0], coef = 0.03, vel = 3, zoom = cam.zoom;
+cam.zoom = 1;
+var vect = norm(x - cam.toX(v.x), y - cam.toY(v.y));
+cam.zoom = zoom;
+
 
 var v2 = v.copy();
 v2.color = undefined;
@@ -439,15 +478,31 @@ A.push(new V(object));
 }
 
 ///////////////////////////////////////////////////////////
+function mainCam() {
+var coef = 0.03;
+
+if(alive) {
+	cam.x = A[0].x;
+	cam.y = A[0].y;
+	} else {
+	cam.memx = cam.w/2;
+	cam.memy = cam.h/2;
+	cam.memzoom = 1;
+	cam.y = (1 - coef) * cam.y + coef * cam.memy;
+	cam.x = (1 - coef) * cam.x + coef * cam.memx;
+	}
+
+cam.zoom = (1 - coef) * cam.zoom + coef * cam.memzoom;
+}
+
 function mainPhysics() {
 var width = canvas.width,
     height = canvas.height;
 
 creation();
 
-collide();
+mainCam();
 
-freeVs();
 var mass = 0;
 for(var i=0; i < A.length; i++){
 	if(A[i].anti == true)
@@ -457,6 +512,11 @@ for(var i=0; i < A.length; i++){
 	A[i].moving();
 	A[i].bouncing(width, height);
 	}
+
+collide();
+
+freeVs();
+
 ds = A.length.toString()+", "+mass.toString();
 
 }
@@ -486,6 +546,14 @@ v.vy = (rnd()*2 - 1)*value;
 }
 
 //input*****input*****input*****input*****input*****input
+
+onmousewheel = function(e) {
+var dz = 1.1;
+if(e.deltaY > 0)
+cam.memzoom /= dz;
+else
+cam.memzoom *= dz;
+}
 
 function recreateTimer() {
 clearTimer(); createTimer(delta);
@@ -518,6 +586,7 @@ return false;
 }
 
 onmousedown = function(e) {
+if(tablet) return;
 if(!replaying)
 	punch(e.pageX - MARGIN, e.pageY - MARGIN);
 }
@@ -537,13 +606,42 @@ if(e.keyCode == 32) space();
 
 //input*****input*****input*****input*****input*****input
 
-function pushRandomVs(opt) {
-for(var i=0; i < opt.n; i++) {
-	var v = new V({x: opt.x, y: opt.y , r: opt.r});
-	v.x += (Math.random()-0.5)*300;
-	v.y += (Math.random()-0.5)*300;
-	v.vx = (Math.random()-0.5) * opt.amount;
-	v.vy = (Math.random()-0.5) * opt.amount;
+function pushRandomVs(opt, n, imass) {
+var mass = imass;
+for(var i=0; i < n; i++) {
+	var v = new V(opt);
+	v.x = Math.random() * canvas.width;
+	v.y = Math.random() * canvas.height;
+	v.r = Math.random() * v.r + 1;
+	v.vx = (Math.random()-0.5) * v.vx;
+	v.vy = (Math.random()-0.5) * v.vy;
+	if(opt.anti == undefined) {
+		if(mass > 0) {
+			v.anti = true;
+			} else {
+			v.anti = false;
+			}
+		if(i == n-1) {
+			if(mass > 0) {
+				v.anti = true;
+				v.r = calcR(mass);
+				} else {
+				v.anti = false;
+				v.r = calcR(-mass);
+				}
+			} else {
+		if(v.anti == true) {
+			mass -= v.m();
+			} else {
+			mass += v.m();
+			}
+			}
+		} else {
+		v.anti = opt.anti;
+		}
+	if(v.anti == true)
+		v.color = "rgba(0, 255, 0, 0.5)";
+	
 	createV(v);
 	}
 }
@@ -567,27 +665,41 @@ setTimeout(function() {
     }, delta);
 }
 
-
-
 function creation() {
+/*
 if(N % 50 == 0) {
-	createV({x: 5, y: 5, r: 5, vx: 1, vy: -1, anti: true, color: "rgba(0,255,0,0.5)"});
-	createV({x: 995, y: 5, r: 5, vx: -1, vy: 1, color: undefined});
+	var anti, color, vel = 1.5;
+	if(Math.random() > 0.9) {
+		color = "#00FF00";
+		anti = true;
+		} else {
+		color = "#FFFF00";
+		anti = false;
+		}
+	createV({x: 5, y: 5, r: 5, vx: Math.random()*vel, anti: anti, vy: 1, color: color});
+	createV({x: 1000, y: 5, r: 5, vx: -1, vy: 1, color: "#FFFF00"});
 	}
+*/
 }
-
-
-
 function init() {
+Math.seedrandom('hello.');
 alive = true; firstClick = false; win = false;
 A = [];
 N = 0;
+var n = 15, r = 10, R = 2.3, x=100, y=100;
+var n2 = Math.floor(n/2);
+createV({x: x+n2*r*R+r, y: x+n2*r*R+r, r: r, color: "rgba(255,255,0,0.5)"});
 
-createV({x: 200, y: 150, r: 30, color: "rgba(255,255,0,0.8)"});
-createV({x: 300, y: 150, r: 30, anti: true, color: "rgba(0,255,0,0.8)"});
+for(var i=0; i < n; i++)
+for(var j=0; j < n; j++)
+if(!(i == n2 && j == n2))
+	createV({x: x+i*r*R+r, y: y+j*r*R+r, r: r, color: "rgba(255,255,0,0.5)"});
+A[0].color = "rgba(255,0,0,0.5)";
+
+//pushRandomVs({x: 0, y: 0, r: 30, color: "rgba(255, 255, 0, 0.5)"}, 100, 10);
 }
 
-
+l.value="286 279 118,219 192 136,197 254 193,318 207 244,311 265 277,207 278 332,186 283 416,334 192 477,230 191 690,304 247 772,172 265 809,198 246 908,246 193 933,334 250 953,287 133 1018,277 113 1145,222 132 1547,384 337 1768,318 367 1993,270 396 2222,94 256 2852,100 255 2924,472 252 3091,399 125 3130,424 173 3155,180 88 3180,118 102 3201,77 217 3219,82 336 3247,131 363 3262,389 250 3632,388 256 3657,388 256 3667,388 256 3685,121 419 3735,132 100 3766,94 132 3783,340 95 3812,411 113 3831,435 153 3844,439 49 3997,462 45 4023,467 45 4033,467 45 4044,218 412 4226,244 410 4241,235 438 4322,275 130 4402,280 121 4412,280 121 4424,280 121 4435,382 90 4486,373 83 4546,361 437 4727,";
 
 
 
