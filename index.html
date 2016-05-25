@@ -7,9 +7,19 @@
 <script>
 var t=0, A_=[], N_=0;
 
+function Dog(s){
+var dogs="";
+for(var i=0; i<s.length; i++){
+var ch=s[i];
+if(ch=="@") ch="f";
+dogs+=ch;
+}
+return dogs;
+}
+
 function FT(){
 if (!T.value) return;
-var A=rndSearch(T.value,1000);
+var A=rndSearch(Dog(T.value),1000);
 for(var i=0; i<A.length; i++){
 var Append=1;
 for(var k=0; k<A_.length; k++)
@@ -23,22 +33,22 @@ onload=function(){
 t=setInterval(FT, 100);
 T.value="[f>f<]";
 T3.value='F='+F.toString()+'\nH = [0,1,0];\nLenA = 3;\nipEnable = 1;';
-Parsing(); out.value=''; N_=0;
+Parsing(Dog(T.value)); out.value=''; N_=0;
 }
 
-function Parsing(){
+function Parsing(s){
 eval(T3.value);
 var v=[];
 T2.value='x y z            ip\n';
-v=b(T.value,[0,0,0]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
-v=b(T.value,[1,0,0]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
-v=b(T.value,[0,1,0]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
-v=b(T.value,[1,1,0]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
+v=b(s,[0,0,0]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
+v=b(s,[1,0,0]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
+v=b(s,[0,1,0]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
+v=b(s,[1,1,0]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
 
-v=b(T.value,[0,0,1]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
-v=b(T.value,[1,0,1]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
-v=b(T.value,[0,1,1]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
-v=b(T.value,[1,1,1]); T2.value+=v[0].join(' ')+'    '+v[1];
+v=b(s,[0,0,1]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
+v=b(s,[1,0,1]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
+v=b(s,[0,1,1]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
+v=b(s,[1,1,1]); T2.value+=v[0].join(' ')+'    '+v[1];
 }
 
 T.oninput=function(){
