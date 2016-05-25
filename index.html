@@ -33,13 +33,14 @@ onload=function(){
 t=setInterval(FT, 100);
 T.value="[f>f<]";
 T3.value='F='+F.toString()+'\nH = [0,1,0];\nLenA = 3;\nipEnable = 1;';
-Parsing(Dog(T.value)); out.value=''; N_=0;
+Parsing(); out.value=''; N_=0;
 }
 
-function Parsing(s){
+function Parsing(){
 eval(T3.value);
-var v=[];
+var v=[], s=Dog(T.value);
 T2.value='x y z            ip\n';
+
 v=b(s,[0,0,0]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
 v=b(s,[1,0,0]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
 v=b(s,[0,1,0]); T2.value+=v[0].join(' ')+'    '+v[1]+'\n';
