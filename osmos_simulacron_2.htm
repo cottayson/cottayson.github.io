@@ -1,0 +1,759 @@
+﻿<body style="margin: 0">
+<textarea id="l" style="position: absolute; top: 810; height: 300; width: 500;"></textarea>
+<button id="newGameButton" style="position: absolute; top: 510; left: 830;" >NEW GAME</button>
+<button id="replay" style="position: absolute; top: 550; left: 830;" >watch replay</button>
+<button id="fastButton" style="position: absolute; top: 600; left: 830;" >fast</button>
+<button id="normalButton" style="position: absolute; top: 625; left: 830;" >normal</button>
+<button id="slowButton" style="position: absolute; top: 650; left: 830;" >slow</button>
+<canvas style="position: absolute;" id="canvas" width = 800 height = 800>
+</body>
+<script>
+!function(a,b){function c(c,j,k){var n=[];j=1==j?{entropy:!0}:j||{};var s=g(f(j.entropy?[c,i(a)]:null==c?h():c,3),n),t=new d(n),u=function(){for(var a=t.g(m),b=p,c=0;q>a;)a=(a+c)*l,b*=l,c=t.g(1);for(;a>=r;)a/=2,b/=2,c>>>=1;return(a+c)/b};return u.int32=function(){return 0|t.g(4)},u.quick=function(){return t.g(4)/(4*(1<<30))},u["double"]=u,g(i(t.S),a),(j.pass||k||function(a,c,d,f){return f&&(f.S&&e(f,t),a.state=function(){return e(t,{})}),d?(b[o]=a,c):a})(u,s,"global"in j?j.global:this==b,j.state)}function d(a){var b,c=a.length,d=this,e=0,f=d.i=d.j=0,g=d.S=[];for(c||(a=[c++]);l>e;)g[e]=e++;for(e=0;l>e;e++)g[e]=g[f=s&f+a[e%c]+(b=g[e])],g[f]=b;(d.g=function(a){for(var b,c=0,e=d.i,f=d.j,g=d.S;a--;)b=g[e=s&e+1],c=c*l+g[s&(g[e]=g[f=s&f+b])+(g[f]=b)];return d.i=e,d.j=f,c})(l)}function e(a,b){return b.i=a.i,b.j=a.j,b.S=a.S.slice(),b}function f(a,b){var c,d=[],e=typeof a;if(b&&"object"==e)for(c in a)try{d.push(f(a[c],b-1))}catch(g){}return d.length?d:"string"==e?a:a+"\0"}function g(a,b){for(var c,d=a+"",e=0;e<d.length;)b[s&e]=s&(c^=19*b[s&e])+d.charCodeAt(e++);return i(b)}function h(){try{if(j)return i(j.randomBytes(l));var b=new Uint8Array(l);return(k.crypto||k.msCrypto).getRandomValues(b),i(b)}catch(c){var d=k.navigator,e=d&&d.plugins;return[+new Date,k,e,k.screen,i(a)]}}function i(a){return String.fromCharCode.apply(0,a)}var j,k=this,l=256,m=6,n=52,o="random",p=b.pow(l,m),q=b.pow(2,n),r=2*q,s=l-1;if(b["seed"+o]=c,g(b.random(),a),"object"==typeof module&&module.exports){module.exports=c;try{j=require("crypto")}catch(t){}}else"function"==typeof define&&define.amd&&define(function(){return c})}([],Math);
+</script>
+<script>
+var MARGIN = 30;
+setMargin(MARGIN);
+
+window.onload = function() {
+onscroll = function() {
+scrollTo(0,0);
+}
+}
+
+function parse(str) {
+if(str.length == 0) return 0;
+return parseInt(str);
+}
+
+function setMargin(x) {
+var ids=["canvas","l","newGameButton","replay","fastButton","normalButton","slowButton"];
+for(var i=0; i < ids.length; i++) {
+	var E = document.getElementById(ids[i]);
+	E.style.top = (x + parse(E.style.top)) + "px";
+	E.style.left = (x + parse(E.style.left)) + "px";
+	}
+}
+
+var c = canvas.getContext('2d');
+
+var A = [], t, timerEnable = true, delta = 8, alive = true, firstClick = false, win = false, replaying = false, speed = 3;
+
+var tablet = false, viewMass = false, portion = 0.03;
+
+canvas.addEventListener('touchstart', function(e) {
+	punch(e.touches[0].pageX - MARGIN, e.touches[0].pageY - MARGIN);
+	tablet = true;
+});
+
+
+var Replay = [];
+
+function log(a, b){
+return Math.log(a) / Math.log(b)}
+
+var cam = {x: 0, y: 0, memx: 0, memy: 0, zoom: 1, memzoom: 1, w: canvas.width, h: canvas.height};
+cam.getX = function() {
+return this.x * this.zoom - this.w / 2;
+}
+
+cam.getY = function() {
+return this.y * this.zoom - this.h / 2;
+}
+
+cam.toX = function(x) {
+return x * cam.zoom - cam.getX();
+}
+
+cam.toY = function(y) {
+return y * cam.zoom - cam.getY();
+}
+
+function options() {
+c.textAlign="center";
+c.textBaseline="middle";
+c.font="15px Times";
+}
+
+options();
+
+function clear() { 
+c.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function V(o) {
+this.x = o.x;
+this.y = o.y;
+this.vx = 0;
+this.vy = 0;
+this.anti = false;
+if(o.vx != undefined)
+	this.vx = o.vx;
+if(o.vy != undefined)
+	this.vy = o.vy;
+this.r = o.r;
+this.color = o.color;
+this.n = o.n;
+if(o.anti != undefined)
+	this.anti = o.anti;
+
+this.p = function() {
+var mass = this.m();
+return {x: mass * this.vx, y: mass * this.vy};
+}
+
+this.m = function() {
+return calcMass(this);
+}
+
+this.copy = function() {
+	return new V({x: this.x, y: this.y, r: this.r, vx: this.vx, vy: this.vy, color: this.color});
+	}
+this.drawing = function() {
+	var path = new Path2D(), str;
+	var x = cam.toX(this.x),  y = cam.toY(this.y), r = this.r * cam.zoom;
+	if(x - r > canvas.width || x + r < 0) return;
+	if(y - r > canvas.height || y + r < 0) return;
+
+	path.moveTo(x + r, y);
+
+	path.arc(x, y, r, 0, 2 * Math.PI);
+	c.stroke(path);
+	if(this.color != undefined) {
+		var memColor = c.fillStyle;
+		c.fillStyle = this.color;	
+		c.fill(path);
+		}
+	c.fillStyle = memColor;
+	if(viewMass || this.n == 0) {
+		str = calcMass(this, "string");
+		} else {
+		str = "0";
+		if (this.r < A[0].r && this.anti != true)
+			str = ""+Math.floor(1 + log(this.m() / A[0].m(),1 - portion));
+		}
+	if(r < str.length*5) return;
+	if(str == "0") return;
+	c.fillText(str, x, y);
+	}
+this.moving = function() {
+	this.x += this.vx;
+	this.y += this.vy;
+	}
+this.bouncing = function(w, h) {
+	var x = this.x, y = this.y, r = this.r;
+	if(r >= w/2 || r >= h/2) freeV(this);
+	if(x < r) {
+		this.x = (r-x) + r;
+		this.vx *= -1;
+		}
+	if(y < r) {
+		this.y = (r-y) + r;
+		this.vy *= -1;
+		}
+	w -= r;
+	h -= r;
+	if(x > w) {
+		this.x = w-(x-w);
+		this.vx *= -1;
+		}
+	if(y > h) {
+		this.y = h-(y-h);
+		this.vy *= -1;
+		}
+	}
+}
+
+function strokeCircle(x, y, r) {
+c.ellipse(x,y,r,r,0,0,Math.PI*2);
+}
+
+function draw() {
+for(var i=0; i < A.length; i++)
+	A[i].drawing();
+}
+
+function mainDraw() {
+clear();
+draw();
+c.strokeRect(cam.toX(0), cam.toY(0), canvas.width * cam.zoom, canvas.height * cam.zoom);
+
+var h = 15;
+if(isWin()) {
+	c.fillText("Победа!",canvas.width/2, canvas.height/3);
+	c.fillText("胜利!",canvas.width/2, canvas.height/3+h);
+	c.fillText("Vittoria!",canvas.width/2, canvas.height/3+2*h);
+	}
+/*
+if(!firstClick && alive) {
+	c.fillText("СЕРЫЙ ЖИРНАЯ ТВАРЬ ТОЛЬКО И ДУМАЕТ КАК СОЖРАТЬ ТЕБЯ!!12111",canvas.width/2, canvas.height/2);
+	c.fillText("GREY FAT THING IS ONLY THINKING OF HOW TO EAT YOU!!12111",canvas.width/2, canvas.height/2 + h);
+	}
+if(!alive) {
+	c.fillText("БИЧ!!12111",canvas.width/2, canvas.height/2);
+	c.fillText("BITCH!!12111",canvas.width/2, canvas.height/2 + h);
+	}
+*/
+}
+
+function tS(x) {
+var minus = false;
+if (x < 0) {
+	x = Math.abs(x);
+	minus = true;
+	}
+var i = Math.floor(x*100);
+var left = Math.floor(i / 100);
+var right = i % 100;
+if(right < 10) right = "0" + right;
+var str = left + "." + right;
+if(minus) str = "-"+str;
+return str;
+}
+
+function debugDraw() {
+c.textAlign="left";
+c.textBaseline="bottom";
+c.fillText(ds, 0, canvas.height);
+c.textBaseline="middle";
+c.textAlign="center";
+}
+///////////////////////////////////////////////////////////
+var ds = "";
+
+function collide() {
+var v1, v2;
+for(var i=0; i < A.length; i++) {
+	v1 = A[i];
+	for(var j = i + 1; j < A.length; j++) {
+		v2 = A[j];
+		collidePair(v1, v2);
+		}
+	}
+}
+
+function collidePair(v1, v2) {
+if(!testCollide(v1, v2)) return;
+
+var R = distance(v1, v2);
+if(R < v1.r + v2.r) makeCollide(v1, v2);
+}
+
+function testCollide(v1, v2) {
+if(v1.free == true || v2.free == true) {
+	return false;
+	}
+var dx = Math.abs(v2.x - v1.x);
+var dy = Math.abs(v2.y - v1.y);
+if(dx < v1.r + v2.r)
+if(dy < v1.r + v2.r)
+	return true;
+return false;
+}
+
+function calcMass(v, type) {
+if(type == "string")
+	return Math.floor(v.r * v.r / 10 + 0.5).toString();
+return v.r * v.r / 10;
+}
+
+
+function calcR(mass) {
+if(mass < 0) mass=0;
+return Math.sqrt(mass * 10);
+}
+
+function distance(v1, v2) {
+var dx = v2.x - v1.x;
+var dy = v2.y - v1.y;
+return Math.sqrt(dx*dx + dy*dy);
+}
+
+function dm(v ,value) {
+v.r = calcR(v.m() + value);
+}
+
+
+function makeCollide(V1, V2) {
+var v1, v2, DM, mass;
+
+if(V1.r > V2.r) { 
+	v1 = V1; v2 = V2;
+	} else {
+	v1 = V2; v2 = V1;
+	}
+/*
+if(v1 == undefined) {
+v1.free = true;
+return;
+}
+if(v2 == undefined) {
+v2.free = true;
+return;
+}
+*/
+mass = v1.m() + v2.m();
+var p1 = v1.p(), p2 = v2.p();
+var P = {x: p1.x + p2.x, y: p1.y + p2.y};
+var v0 = {x: P.x / mass, y: P.y / mass};
+
+mass = v2.m();
+
+var dist = distance(v1, v2);
+
+var dr = dist - (v1.r + v2.r);
+
+//DM = (mass > 10) ? mass*0.05 : 0.5;
+
+DM = dr * dr;
+
+if(DM > v2.m()) DM = v2.m();
+
+
+if(v1.anti != v2.anti) {
+dm(v1, -DM);
+dm(v2, -DM);
+mass = v1.m() + v2.m();
+var m1 = v1.m(), m2 = v2.m();
+if(v1.r <= 0.00001) 
+	v1.free = true;
+if(v2.r > 0.1) {
+	//v0.x = (v1.vx * m1 + v2.vx * m2) / mass;
+
+	v1.vx = (v0.x * mass - v2.vx * m2) / m1;
+	v1.vy = (v0.y * mass - v2.vy * m2) / m1;
+	} else {
+	dm(v1, -v2.m());
+	v1.vx = v0.x;
+	v1.vy = v0.y;
+	v2.r = 0;
+	v2.free = true;
+	}
+return;
+}
+
+dm(v1, DM);
+dm(v2, -DM);
+mass = v1.m();
+if(v2.r > 0.1) {
+	var new_p2 = v2.p();
+	v1.vx = (P.x - new_p2.x) / mass;
+	v1.vy = (P.y - new_p2.y) / mass;
+	} else {
+	dm(v1, v2.m());
+	v1.vx = P.x / mass;
+	v1.vy = P.y / mass;
+	v2.r = 0;
+	v2.free = true;
+	}
+}
+var N = 0;
+
+//*******************************************************
+function replayPunch() {
+for(var i = 0; i < Replay.length; i++) {
+	var o = Replay[i];
+	if(o.t == N)
+		punch(o.x, o.y);
+	}
+}
+
+function isWin() {
+if(win) return true;
+if(alive && A.length == 1) {
+win = true;
+return true;
+}
+return false;
+}
+
+function len(x, y) {
+return Math.sqrt(x*x + y*y);
+}
+
+function norm(x, y) {
+var L = len(x, y);
+if (L > 0) 
+	return {x: x/L, y: y/L};
+	else
+	return {x: 1, y: 0};
+}
+
+
+function isDigit(str) {
+if (str.length == 0) return false;
+for(var i=0; i < str.length; i++) {
+	var char = str[i];
+	if (!((char >= "0" && char <= "9") || char == "-")) return false;
+	}
+return true;
+}
+
+function readReplay(str) {
+var R = [], s="";
+
+for(var i=0; i<str.length; i++) {
+	var char = str[i];
+	if(char == ",") char = " ";
+	s += char;
+	}
+
+s = s.trim();
+
+var arr = s.split(" ");
+
+if(arr.length % 3 != 0) return [];
+
+for(var i=0; i < arr.length; i++)
+	if(!isDigit(arr[i])) return [];
+
+
+for(var i=0; i < arr.length; i += 3)
+	R.push({x: +arr[i], y: +arr[i+1], t: +arr[i+2]});
+return R;
+}
+
+function writeReplay() {
+l.value = "";
+for(var i=0; i<Replay.length; i++) {
+	var str = "", o = Replay[i];
+	str += o.x+" ";
+	str += o.y+" ";
+	str += o.t+",";
+	l.value += str;
+	}
+}
+//*******************************************************
+function freeVs() {
+var L = A.length;
+for(var i=0; i < L; i++) {
+	if (A[i] == undefined) {
+	ds = i;
+	timerEnable = false;
+	return;
+	}
+	if (A[i].free == true) {
+		freeV(A[i]);
+		L--;
+		}
+	}
+}
+
+function freeV(v) {;
+var n = v.n;
+if (n == 0) alive = false
+if(n == A.length - 1) {
+	A.pop();
+	} else {
+	delete A[n];
+	A[n] = A.pop();
+	if(A[n] != undefined)
+		A[n].n = n;
+	}
+}
+
+function createV(object) {
+object.n = A.length;
+A.push(new V(object));
+}
+
+///////////////////////////////////////////////////////////
+function mainCam() {
+var coef = 0.03;
+
+if(alive) {
+	cam.x = A[0].x;
+	cam.y = A[0].y;
+	} else {
+	cam.memx = cam.w/2;
+	cam.memy = cam.h/2;
+	cam.memzoom = 1;
+	cam.y = (1 - coef) * cam.y + coef * cam.memy;
+	cam.x = (1 - coef) * cam.x + coef * cam.memx;
+	}
+
+cam.zoom = (1 - coef) * cam.zoom + coef * cam.memzoom;
+}
+
+function mainPhysics() {
+var width = canvas.width,
+    height = canvas.height;
+
+creation();
+
+mainCam();
+
+var mass = 0;
+for(var i=0; i < A.length; i++){
+	if(A[i].anti == true)
+		mass -= A[i].m();
+		else
+		mass += A[i].m();
+	A[i].moving();
+	A[i].bouncing(width, height);
+	}
+
+collide();
+
+freeVs();
+
+colorChange();
+
+ds = A.length.toString()+", "+mass.toString();
+
+}
+
+function step() {
+for(var i=0; i < speed; i++) {
+if(replaying) replayPunch();
+mainPhysics();
+N++;
+}
+mainDraw();
+debugDraw();
+}
+
+function createTimer(delta) {
+//t = setInterval(step, delta);
+}
+
+function clearTimer() {
+//clearInterval(t);
+}
+
+function setRandomSpeed(v, value) {
+var rnd = Math.random;
+v.vx = (rnd()*2 - 1)*value;
+v.vy = (rnd()*2 - 1)*value;
+}
+
+//input*****input*****input*****input*****input*****input
+
+onmousewheel = function(e) {
+var dz = 1.1;
+if(e.deltaY > 0)
+cam.memzoom /= dz;
+else
+cam.memzoom *= dz;
+}
+
+function recreateTimer() {
+clearTimer(); createTimer(delta);
+}
+
+newGameButton.onclick = function() {
+Replay = [];
+replaying = false;
+init();
+}
+
+fastButton.onclick = function() {speed = 15; delta = 8;}
+normalButton.onclick = function() {speed = 3; delta = 8;}
+slowButton.onclick = function() {speed = 1; delta = 8;}
+
+replay.onclick = function() {
+replaying = true;
+var R = readReplay(l.value);
+ds="";
+if(R.length > 0) 
+	Replay = R;
+	else
+	ds = "Error load replay, Ошибка загрузки риплея";
+init();
+}
+
+
+oncontextmenu = function() {
+return false;
+}
+
+onmousedown = function(e) {
+if(tablet) return;
+if(!replaying)
+	punch(e.pageX - MARGIN, e.pageY - MARGIN);
+}
+
+onkeydown = function(e) {
+
+if(e.keyCode == 13) {
+	if(!timerEnable) {
+	timerEnable = true;
+	startTimer();
+	} else
+		timerEnable = !timerEnable;
+	}
+
+if(e.keyCode == 32) space();
+}
+
+//input*****input*****input*****input*****input*****input
+
+function pushRandomVs(opt, n, imass) {
+var mass = imass;
+for(var i=0; i < n; i++) {
+	var v = new V(opt);
+	v.x = Math.random() * canvas.width;
+	v.y = Math.random() * canvas.height;
+	v.r = Math.random() * v.r + 1;
+	v.vx = (Math.random()-0.5) * v.vx;
+	v.vy = (Math.random()-0.5) * v.vy;
+	if(opt.anti == undefined) {
+		if(mass > 0) {
+			v.anti = true;
+			} else {
+			v.anti = false;
+			}
+		if(i == n-1) {
+			if(mass > 0) {
+				v.anti = true;
+				v.r = calcR(mass);
+				} else {
+				v.anti = false;
+				v.r = calcR(-mass);
+				}
+			} else {
+		if(v.anti == true) {
+			mass -= v.m();
+			} else {
+			mass += v.m();
+			}
+			}
+		} else {
+		v.anti = opt.anti;
+		}
+	if(v.anti == true)
+		v.color = "rgba(0, 255, 0, 0.5)";
+	
+	createV(v);
+	}
+}
+
+init();
+//createTimer(delta);
+//476 244 77,10 183 1609,492 246 2848, dmitry
+//476 244 77,492 246 5000, два хода
+
+startTimer();
+
+function startTimer() {
+   stepR();
+}
+
+function stepR() {
+if(timerEnable)
+setTimeout(function() {
+        requestAnimationFrame(stepR);
+        step();
+    }, delta);
+}
+
+function punch(x, y) {
+if(!(x <= canvas.width + MARGIN &&  y <= canvas.height + MARGIN))
+   return;
+
+firstClick = true;
+
+if(!alive || win) return;
+
+if(!replaying) {
+	Replay.push({x: x, y: y, t: N});
+	writeReplay();
+}
+
+var v = A[0], coef = portion, vel = 3, zoom = cam.zoom;
+cam.zoom = 1;
+var vect = norm(x - cam.toX(v.x), y - cam.toY(v.y));
+cam.zoom = zoom;
+
+
+var v2 = v.copy();
+v2.color = undefined;
+
+v2.r = calcR(v.m()*coef);
+v.r = calcR(v.m() * (1 - coef));
+
+var dist = v.r + v2.r;
+dist *= 1.01;
+
+v2.x += dist * vect.x;
+v2.y += dist * vect.y;
+
+v2.vx += vel * vect.x;
+v2.vy += vel * vect.y;
+
+v2.anti = false;
+v2.color = "rgba(0,0,255,0.5)";
+
+v.vx += vel * vect.x * -coef;
+v.vy += vel * vect.y * -coef;
+
+createV(v2);
+
+}
+
+function colorChange() {
+for(var i = 1; i < A.length; i++) {
+	var v = A[i];
+	if(v.anti != true) {
+	if(v.r > A[0].r)	
+		v.color = "rgba(255, 0, 0, 0.5)";
+		else 
+		if(v.m() > A[0].m()*(1 - portion))
+			v.color = "rgba(255, 255, 0, 0.5)";
+			else
+			v.color = "rgba(0, 0, 255, 0.25)";
+	}
+	}
+}
+
+
+function creation() {
+
+}
+function init() {
+Math.seedrandom('hello.5');
+alive = true; firstClick = false; win = false; viewMass = false;
+A = [];
+N = 0;
+var n = 15, r = 5, R = 2.1, x=10, y=50;
+var n2 = Math.floor(n/2);
+createV({x: x+n2*r*R+r, y: x+n2*r*R+r, r: r, color: undefined});
+/*
+for(var i=0; i < n; i++)
+for(var j=0; j < n; j++)
+if(!(i == n2 && j == n2)) {
+	var r2 = r;
+	var anti = false, color = "rgba(255,255,0,0.5)";
+	if((i+j) % 2 == 2) {
+		anti = true;
+		color = "rgba(0,255,0,0.5)";
+		r2 = 1;
+		}
+	createV({x: x+i*r*R+r, y: y+j*r*R+r, r: r2, anti: anti, color: color});
+}
+*/
+var vel = 0.01;
+
+pushRandomVs({x: 0, y: 0, r: 15, color: "rgba(255, 255, 0, 0.5)", anti: undefined, vx : vel, vy: vel}, 350, 2.5);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</script>
