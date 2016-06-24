@@ -104,9 +104,17 @@ return {x: mass * this.vx, y: mass * this.vy};
 this.m = function() {
 return calcMass(this);
 }
-
+/*
 this.copy = function() {
 	return new V({x: this.x, y: this.y, r: this.r, vx: this.vx, vy: this.vy, color: this.color});
+	}
+*/
+this.copy = function() {
+	var copy = {};
+	for(var i in this) {
+		copy[i] = this[i];
+		}
+	return new V(copy);
 	}
 this.drawing = function() {
 	var path = new Path2D(), str;
