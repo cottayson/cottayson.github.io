@@ -1,0 +1,549 @@
+﻿<html><head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="sudoku.css"></head>
+<body></body>
+<script>
+
+function Solver(S) {
+this.tactics = {};
+
+this.tactics.lastHero = {
+estimate: function() {
+S.forAll(function(i, j) {
+  if(S[i][j].candidates.toArray().length == 1) {
+    S.setColorsOfSmallSquares(i, j, S[i][j].candidates, [0, 255, 0]);
+  }
+});
+
+  },
+solve: function() {
+S.forAll(function(i, j) {
+  var arr = S[i][j].candidates.toArray();
+  if(arr.length == 1 && S[i][j].n == 0) {
+    S[i][j].n = arr[0];
+  }
+});
+
+  }
+}
+
+this.tactics.hiddenOne = {
+estimate: function() {
+var arr = S.sumAllRowsColumnsAndBoxes();
+for(var i in arr) {
+  var x = arr[i].coords[0], 
+      y = arr[i].coords[1], 
+      digit = arr[i].digit,
+      set = S.arrayToSet([digit]).inverse().intersection(S[x][y].candidates);
+  S.setColorsOfSmallSquares(x, y, set, [255, 255, 0]);
+}
+
+
+  },
+
+solve: function() {
+var arr = S.sumAllRowsColumnsAndBoxes();
+for(var i in arr) {
+  var x = arr[i].coords[0], 
+      y = arr[i].coords[1], 
+      digit = arr[i].digit;
+  S[x][y].n = digit;
+}
+
+
+  }
+}
+
+this.estimate = function(tactic) {
+S.setAllCandidates();
+if(typeof(tactic) == "string")
+  this.tactics[tactic].estimate();
+else {
+  for(var i in this.tactics)
+    this.tactics[i].estimate();
+}
+
+
+S.print();
+}
+
+this.solve = function(tactic) {
+if(typeof(tactic) == "string") {
+  S.setAllCandidates();
+  this.tactics[tactic].solve();
+} else {
+  for(var i in this.tactics) {
+    S.setAllCandidates();
+    this.tactics[i].solve();
+  }
+}
+S.clearColors();
+S.print();
+}
+
+return this; 
+}
+
+var S = Sudoku();
+S.setRow(0,[0,0,1, 0,6,9, 0,0,8]);
+S.setRow(1,[0,7,0, 0,0,1, 6,0,9]);
+S.setRow(2,[0,0,0, 8,0,0, 0,0,0]);
+
+S.setRow(3,[0,0,3, 0,0,0, 7,6,0]);
+S.setRow(4,[0,0,0, 0,7,0, 4,0,0]);
+S.setRow(5,[0,0,6, 0,3,0, 0,0,1]);
+
+S.setRow(6,[0,0,5, 0,0,3, 0,9,0]);
+S.setRow(7,[0,1,0, 0,0,0, 0,0,0]);
+S.setRow(8,[8,0,0, 0,0,6, 0,3,0]);
+
+
+//S[0][0].n=3;
+//S[0][1].n=4;
+//S[1][0].n=2;
+
+S.resetCandidates();
+S.setAllCandidates();
+S.print();
+
+function Sudoku() {
+var sudoku = [];
+for(var i=0; i<9; i++) {
+  sudoku[i] = [];
+  for(var j=0; j<9; j++)
+    sudoku[i][j] = new Square();
+}
+
+sudoku.logArray = function log(arr) {
+for(var i in arr)
+  console.log(JSON.stringify(arr[i]));
+}
+
+sudoku.onlyDigits = function(a) {
+var arr = [];
+for(var i=0; i<a.length; i++) {
+  arr[i] = [];
+  for(var j=0; j<a[i].length; j++) {
+    var x = a[i][j].x;
+    var y = a[i][j].y;
+    var n = this[x][y].n;
+    if(n > 0)
+      arr[i].push({x: x, y: y, n: n});
+  }
+}
+return arr;
+}
+
+sudoku.allRowsColumnsAndBoxes = function() {
+var arr = [], sets = ['row', 'column', 'box'];
+for(var k=0; k<3; k++) {
+  for(var i=0; i<9; i++) {
+    var set = this[sets[k]](i);
+    arr.push(set);
+  }
+}
+return arr;
+}
+
+sudoku.sumAllRowsColumnsAndBoxes = function() {
+var arr = [];
+for(var i=0; i<9; i++) {
+  var c = this.sumCandidatesOfArray(this.row(i));
+  for(var j=0; j<c.length; j++)
+    arr.push(c[j]);
+}
+
+for(var i=0; i<9; i++) {
+  var c = this.sumCandidatesOfArray(this.column(i));
+  for(var j=0; j<c.length; j++)
+    arr.push(c[j]);
+}
+
+for(var i=0; i<9; i++) {
+  var c = this.sumCandidatesOfArray(this.box(i));
+  for(var j=0; j<c.length; j++)
+    arr.push(c[j]);
+}
+
+return arr;
+}
+
+sudoku.sumCandidatesOfArray = function(arr) {
+var obj = {digits: [], coords: []}
+var digits = obj.digits;
+var coords = obj.coords;
+
+for(var i=0; i<9; i++) {
+  digits[i] = 0;
+  coords[i] = 0;
+  }
+
+for(var i=0; i<9; i++) {
+  var x = arr[i].x;
+  var y = arr[i].y;
+  var sqr = S[x][y];
+  if(sqr.n == 0)
+    for(var j=0; j<9; j++) {
+      digits[j] += sqr.candidates[j];
+      if(digits[j] == 1 && coords[j] == 0) {
+        coords[j] = [x, y];
+      }
+      if(digits[j] > 1) {
+        coords[j] = -1;
+      }
+    }
+}
+
+var arr = [];
+for(var i=0; i<9; i++)
+  if(typeof(coords[i]) == "object")
+    arr.push({digit: i+1, coords: coords[i]});
+return arr;
+}
+
+sudoku.box = function(n) {
+var arr = [];
+var x = div(n, 3), y = n % 3;
+for(var i=0; i<3; i++)
+  for(var j=0; j<3; j++)
+    arr.push({x: 3*x + i, y: 3*y + j});
+return arr;
+}
+
+sudoku.column = function(n) {
+var arr = [];
+for(var i=0; i<9; i++)
+  arr.push({x: i, y: n});
+return arr;
+}
+
+sudoku.row = function(n) {
+var arr = [];
+for(var i=0; i<9; i++)
+  arr.push({x: n, y: i});
+return arr;
+}
+
+sudoku.forAll = function(call) {
+for(var i=0; i<9; i++)
+  for(var j=0; j<9; j++)
+    call(i, j);
+}
+
+sudoku.clearColors = function() {
+this.forAll(function(i, j) {
+delete sudoku[i][j].color;
+delete sudoku[i][j].colorsOfSmallSquares;
+});
+}
+
+sudoku.setColorsOfSmallSquares = function(x, y, set, color) {
+var square = this[x][y];
+if(square.colorsOfSmallSquares == undefined)
+  square.colorsOfSmallSquares=[];
+for(var i=0; i<9; i++) {
+  if(set.isElem(i + 1))
+    square.colorsOfSmallSquares[i] = color;
+}
+}
+
+sudoku.solver = new Solver(sudoku);
+
+sudoku.arrayToSet = function(arr) {
+var set = new Set();
+set.unionWithArray(arr);
+return set;
+}
+
+sudoku.digitInBoxes = function(digit) {
+var set = new Set();
+for(var i=0; i<9; i++)
+  set[i] = this.digitInBox(digit, div(i, 3), i % 3) ? 1 : 0;
+return set;
+}
+
+sudoku.digitInBox = function(digit, x, y) {
+var set = new Set();
+set.unionWithArray(this.getBlock(x, y));
+return set.isElem(digit);
+}
+
+sudoku.resetCandidates = function() {
+this.forAll(function(i, j) {
+sudoku[i][j].candidates = new Set().inverse();
+});
+}
+
+sudoku.setAllCandidates = function() {
+this.forAll(function(i, j) {
+sudoku.setCandidates(i, j);
+});
+}
+
+sudoku.setCandidates = function(x, y) {
+this[x][y].candidates.intersection(this.getCandidates(x, y));
+}
+
+sudoku.getCandidates = function(x, y) {
+var set = this.getVarietyOf(x, y);
+return set.inverse();
+}
+
+sudoku.getVarietyOf = function(x, y) {
+var set = new Set();
+set.unionWithArray(this.getRow(x));
+set.unionWithArray(this.getColumn(y));
+set.unionWithArray(this.getBox(div(x, 3), div(y, 3)));
+return set;
+}
+
+sudoku.getBox = function(x, y) {
+var block = [];
+for(var i=x*3; i<(x+1)*3; i++)
+  for(var j=y*3; j<(y+1)*3; j++) {
+    block.push(this[i][j].n);
+  }
+return block;
+}
+
+sudoku.getColumn = function(n) {
+var column = [];
+for(var i=0; i<9; i++)
+  column.push(this[i][n].n);
+return column;
+}
+
+sudoku.setColumn = function(n, column) {
+var L = this.limit(column.length);
+for(var i=0; i<L; i++)
+  this[i][n].n = column[i];
+}
+
+sudoku.getRow = function(n) {
+var row = [];
+for(var j=0; j<9; j++)
+  row.push(this[n][j].n);
+return row;
+}
+
+sudoku.setRow = function(n, row) {
+var L = this.limit(row.length);
+for(var j=0; j<L; j++)
+  this[n][j].n = row[j];
+}
+
+sudoku.limit = function(L) {
+return L > 9 ? 9 : L;
+}
+
+sudoku.print = function() {
+var s = '';
+
+function styles(i, j) {
+var arr = [1, 0, 0, 1];
+if(i % 3 == 2) {
+arr[2] = 1;
+}
+if(j % 3 == 2) {
+arr[1] = 1;
+}
+return arr;
+}
+
+
+function w(str) {
+s += str + '\n';
+}
+
+function getStyle(o) {
+var str = "border-style: solid; border-width: ";
+str += o[0] +"px "+ o[1] +"px "+ o[2] +"px "+ o[3] +"px;";
+return str;
+}
+
+function getSquare(x, y, n, candidates, color, colors) {
+var s = "";
+
+var colorToString = function(c) {
+if(c == undefined || c.length != 3)
+  return ";";
+return 'rgb('+ c[0] +', '+ c[1] +', '+ c[2] +');';
+}
+
+var w = function(str) {
+s += str + '\n';
+}
+
+var getColor = function(i, j) {
+var m = 3*i+j;
+if(colors == undefined)
+  return '';
+return ' style="background-color: '+colorToString(colors[m])+'"';
+}
+
+var getNumber = function(i, j) {
+var m = 3*i+j;
+  if(candidates[m] == 1) return m+1;
+return "&nbsp;";
+}
+
+if(n === "" && candidates != undefined) {
+  w('<table id="cl01" class="candtbSmall" cellspacing="0" align="center"><tbody>');
+
+  for(var i=0; i<3; i++) {
+    w('<tr>');
+    for(var j=0; j<3; j++) {
+    w('<td'+ getColor(i, j) +'>'+ getNumber(i, j) +'</td>');
+    }
+    w('</tr>');
+  }
+
+  w('</tbody></table>');
+} else {
+s = n;
+}
+return '<td class="InnerBigSmall" style="'+ getStyle(styles(x, y)) +' background-color: '+ colorToString(color)+ '">' + s;
+}
+
+//***********************************************
+w('<caption>Судоку</caption>');
+w('<tbody>');
+
+for(var i=0; i<9; i++) {
+  w('<tr>');
+  for(var j=0; j<9; j++) {
+    w( getSquare(i, j, this.getN(i, j), this[i][j].candidates,  this[i][j].color, this[i][j].colorsOfSmallSquares) );
+    w('</td>');
+  }
+  w('</tr>');
+}
+
+w('</tbody>');
+//***********************************************
+
+if(this.elem == undefined)
+this.elem = document.createElement("table");
+this.elem.className="OuterT";
+this.elem.innerHTML = s;
+document.body.appendChild(this.elem);
+}
+
+sudoku.getN = function(x, y) {
+if(this[x][y].n == 0) return "";
+return this[x][y].n;
+}
+
+sudoku.setN = function(x, y, n) {
+this[x][y].n = n;
+}
+
+
+return sudoku;
+}
+
+function testSet() {
+var X = new Set();
+var Y = new Set();
+X[5] = 1;
+X.inverse();
+console.log("X", X);
+Y[0] = 1;
+console.log("Y", Y);
+console.log("X&Y", X.copy().intersection(Y));
+console.log("X|Y", X.copy().union(Y));
+console.log("X/Y", X.copy().sub(Y));
+X = new Set();
+X.unionWithArray([1,4,5]);
+console.log("[1,4,5] =>", X);
+console.log("X.toArray() =>", X.toArray());
+console.log("X.isElem(1) =>", X.isElem(1));
+console.log("X.isElem(0) =>", X.isElem(0));
+}
+
+function div(x, y) {
+return Math.floor(x / y);
+}
+
+function Set() {
+var set = [];
+for(var i=0; i<9; i++) {
+  set.push(0);
+}
+
+set.isElem = function(n) {
+return this[n - 1] == 1;
+}
+
+set.toArray = function() {
+var arr=[];
+for(var i=0; i<9; i++)
+  this[i] == 1 ? arr.push(i+1) : 1;
+return arr;
+}
+
+set.subWithArray = function(arr) {
+for(var i=0; i<arr.length; i++) {
+  if(this.limit(arr[i]))
+    this[arr[i] - 1] = 0;
+}
+return this;
+}
+
+set.unionWithArray = function(arr) {
+for(var i=0; i<arr.length; i++) {
+  if(this.limit(arr[i]))
+    this[arr[i] - 1] = 1;
+}
+return this;
+}
+
+set.limit = function(x) {
+return x >= 1 && x <= 9;
+}
+
+set.copy = function() {
+var set = new Set();
+for(var i=0; i<9; i++)
+  set[i] = this[i];
+return set;
+}
+
+set.sub = function(Y) {
+this.inverse();
+this.union(Y);
+this.inverse();
+return this;
+}
+
+set.inverse = function() {
+for(var i=0; i<9; i++)
+  this[i] = 1 - this[i];
+return this;
+}
+
+set.union = function(Y) {
+for(var i=0; i<9; i++)
+  this[i] = this[i] | Y[i];
+return this;
+}
+
+set.intersection = function(Y) {
+for(var i=0; i<9; i++)
+  this[i] = this[i] & Y[i];
+return this;
+}
+
+return set;
+}
+
+function undef(x, value) {
+if(value == undefined) value = 0;
+if(x == undefined) return value;
+return x;
+}
+
+function Square(n) {
+return {n: undef(n)};
+}
+
+</script></html>

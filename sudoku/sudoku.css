@@ -1,0 +1,147 @@
+﻿.OuterT {
+	font-family:verdana, arial, Helvetica, sans-serif;
+	font-size: 10pt;
+	background: #ffffff;
+	border-bottom: 3px solid #000000;
+	border-top: 3px solid #000000;
+	border-left: 3px solid #000000;
+	border-right: 3px solid #000000;
+	border-collapse: separate;
+	border-spacing: 0;
+	*border-collapse: collapse; /* hack is needed for IE7 also */	
+}
+.InnerBig {
+	font-family: verdana, arial, Helvetica, sans-serif;
+	font-size: 20pt;
+	color: black;
+	border-bottom: 1px solid #888888;
+	border-top: 1px solid #888888;
+	border-left: 1px solid #888888;
+	border-right: 1px solid #888888;
+	width:63px;
+	height:66px;
+	text-align:center;
+}
+.InnerBigSmall 
+{
+	border-collapse:collapse;
+	font-family: verdana, arial, Helvetica, sans-serif;
+	font-size: 16pt;
+	color: black;
+	border-bottom: 0px solid #888888;
+	border-top: 1px solid #888888;
+	border-left: 0px solid #888888;
+	border-right: 1px solid #888888;
+	width:35px;
+	height:38px;
+	text-align:center;
+}
+.InnerLittle {
+	font-family:verdana, arial, Helvetica, sans-serif;
+	font-size: 10pt;
+	color: black;
+	border-bottom: 1px solid #888888;
+	border-top: 1px solid #888888;
+	border-left: 1px solid #888888;
+	border-right: 1px solid #888888;
+	width:65px;
+	height:65px;
+	text-align:left;
+	vertical-align:top;
+}
+.InnerLittleSmall {
+	font-family:verdana, arial, Helvetica, sans-serif;
+	font-size: 6pt;
+	color: black;
+	border-bottom: 1px solid #888888;
+	border-top: 1px solid #888888;
+	border-left: 1px solid #888888;
+	border-right: 1px solid #888888;
+	width:35px;
+	height:38px;
+	text-align:center;
+	text-align:left;
+	vertical-align:top;
+}
+.InnerLittleCenter {
+	font-family:verdana, arial, Helvetica, sans-serif;
+	font-size: 10pt;
+	color: black;
+	border-bottom: 1px solid #888888;
+	border-top: 1px solid #888888;
+	border-left: 1px solid #888888;
+	border-right: 1px solid #888888;
+	width:65px;
+	height:65px;
+	text-align:center;
+	vertical-align:middle;
+}
+.cellLittle {
+	font-family:verdana, arial, Helvetica, sans-serif;
+	font-size: 10pt;
+	color: black;
+	width:15px;
+	height:15px;
+	text-align:center;
+	vertical-align:middle;
+}
+.InnerBlindLittle {
+	font-family:verdana, arial, Helvetica, sans-serif;
+	font-size: 10pt;
+	color: black;
+	border-bottom: 1px solid #888888;
+	border-top: 1px solid #888888;
+	border-left: 1px solid #888888;
+	border-right: 1px solid #888888;
+	width:65px;
+	height:65px;
+	text-align:center;
+	vertical-align:middle;
+}
+.coords {
+	font-family:verdana, arial, sans-serif;
+	font-size: 10pt;
+	color: #000000;
+	text-align:center;
+}
+.tiny {
+	font-family:verdana, arial, sans-serif;
+	font-size: 10pt;
+	color: #000000;
+	text-align:center;
+	width:20px;
+}
+table.candtb
+{
+	border-spacing:0px;
+	align:center;
+	empty-cells:show;
+	border-collapse:collapse;
+	table-layout: fixed;
+	width:46px;
+	height:46px;
+}
+table.candtb td
+{
+	padding:0 1 0 3;
+	font-size:10pt;
+	font-family: verdana;
+	color:#000000;
+}
+table.candtbSmall
+{
+	border-spacing:0px;
+	align:center;
+	empty-cells:show;
+	border-collapse:collapse;
+	table-layout: fixed;
+	width:26px;
+	height:26px;
+}
+table.candtbSmall td
+{
+	padding:0 1 0 3;
+	font-size:6pt;
+	font-family: verdana;
+	color:#000000;
+}
