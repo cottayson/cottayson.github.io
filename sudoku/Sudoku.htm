@@ -63,7 +63,7 @@ else {
     this.tactics[i].estimate();
 }
 
-
+this.detectErrors();
 S.print();
 }
 
@@ -78,33 +78,55 @@ if(typeof(tactic) == "string") {
   }
 }
 S.clearColors();
+this.detectErrors();
 S.print();
+}
+
+this.detectErrors = function() {
+var pairErrors = S.detectPairs(S.onlyDigits( S.allRowsColumnsAndBoxes() ));
+var nullErrors = [];
+S.forAll(function(i, j) {
+if(typeof(S[i][j].candidates) == "object")
+  if(S[i][j].candidates.toArray().length == 0)
+    nullErrors.push({x: i, y: j});
+});
+
+for(var i in nullErrors) {
+  var o = nullErrors[i];
+  if(S[o.x][o.y].n == 0)
+    S.setColor(o.x, o.y, [255, 255, 0]);
+  }
+
+for(var i in pairErrors) {
+  var o = pairErrors[i];
+  S.setColor(o.x, o.y, [255, 0, 0]);
+  }
+
 }
 
 return this; 
 }
 
-var S = Sudoku();
-S.setRow(0,[0,0,1, 0,6,9, 0,0,8]);
-S.setRow(1,[0,7,0, 0,0,1, 6,0,9]);
-S.setRow(2,[0,0,0, 8,0,0, 0,0,0]);
+var s = Sudoku();
+s.setRow(0,[0,0,0, 0,0,0, 6,0,0]);
+s.setRow(1,[0,0,0, 0,0,0, 1,2,3]);
+s.setRow(2,[5,0,9, 0,6,0, 0,0,0]);
 
-S.setRow(3,[0,0,3, 0,0,0, 7,6,0]);
-S.setRow(4,[0,0,0, 0,7,0, 4,0,0]);
-S.setRow(5,[0,0,6, 0,3,0, 0,0,1]);
+s.setRow(3,[0,0,0, 3,0,0, 0,7,0]);
+s.setRow(4,[6,0,0, 2,0,0, 0,0,5]);
+s.setRow(5,[0,4,0, 0,0,8, 0,0,0]);
 
-S.setRow(6,[0,0,5, 0,0,3, 0,9,0]);
-S.setRow(7,[0,1,0, 0,0,0, 0,0,0]);
-S.setRow(8,[8,0,0, 0,0,6, 0,3,0]);
+s.setRow(6,[0,0,0, 0,8,0, 7,0,6]);
+s.setRow(7,[2,6,4, 0,0,0, 0,0,0]);
+s.setRow(8,[0,0,5, 0,0,4, 0,0,0]);
 
 
-//S[0][0].n=3;
-//S[0][1].n=4;
-//S[1][0].n=2;
+//s[0][0].n=3;
+//s[0][1].n=4;
+//s[1][0].n=2;
 
-S.resetCandidates();
-S.setAllCandidates();
-S.print();
+s.setAllCandidates();
+s.print();
 
 function Sudoku() {
 var sudoku = [];
@@ -114,9 +136,63 @@ for(var i=0; i<9; i++) {
     sudoku[i][j] = new Square();
 }
 
+sudoku.load = function() {
+if(typeof(this._save) != "object") {
+  console.warn("_save is empty");
+  return;
+  }
+for(var i=0; i<9; i++) {
+  for(var j=0; j<9; j++) {
+    var sq = this._save[i][j];
+    var _sq = this[i][j];
+    _sq.n = sq.n;
+    _sq.candidates = sq.candidates.copy();
+  }
+}
+}
+
+sudoku.save = function() {
+this._save = [];
+for(var i=0; i<9; i++) {
+  this._save[i] = [];
+  for(var j=0; j<9; j++) {
+    this._save[i][j] = new Square();
+    var sq = this[i][j];
+    var _sq = this._save[i][j];
+    _sq.n = sq.n;
+    _sq.candidates = sq.candidates.copy();
+  }
+}
+}
+
 sudoku.logArray = function log(arr) {
 for(var i in arr)
   console.log(JSON.stringify(arr[i]));
+}
+
+sudoku.append = function(arr, o) {
+for(var i in arr)
+  if(arr[i].n == o.n)
+    return {o: arr[i], res: false};
+arr.push(o);
+return {res: true};
+}
+
+sudoku.detectPairs = function(a) {
+var arrayOfErrors = [];
+for(var i=0; i<a.length; i++) {
+  var row = [];
+  for(var j=0; j<a[i].length; j++) {
+    var o = a[i][j];
+    var stateOfAppend = this.append(row, o);
+    if(!stateOfAppend.res) {
+      var _o = stateOfAppend.o;
+      arrayOfErrors.push({x: o.x, y: o.y});
+      arrayOfErrors.push({x: _o.x, y: _o.y});
+    }
+  }
+} 
+return arrayOfErrors;
 }
 
 sudoku.onlyDigits = function(a) {
@@ -181,7 +257,7 @@ for(var i=0; i<9; i++) {
 for(var i=0; i<9; i++) {
   var x = arr[i].x;
   var y = arr[i].y;
-  var sqr = S[x][y];
+  var sqr = this[x][y];
   if(sqr.n == 0)
     for(var j=0; j<9; j++) {
       digits[j] += sqr.candidates[j];
@@ -237,6 +313,10 @@ delete sudoku[i][j].colorsOfSmallSquares;
 });
 }
 
+sudoku.setColor = function(x, y, color) {
+this[x][y].color = color;
+}
+
 sudoku.setColorsOfSmallSquares = function(x, y, set, color) {
 var square = this[x][y];
 if(square.colorsOfSmallSquares == undefined)
@@ -281,7 +361,9 @@ sudoku.setCandidates(i, j);
 }
 
 sudoku.setCandidates = function(x, y) {
-this[x][y].candidates.intersection(this.getCandidates(x, y));
+var sq = this[x][y];
+if(sq.candidates == undefined) sq.candidates = new Set().inverse();
+sq.candidates.intersection(this.getCandidates(x, y));
 }
 
 sudoku.getCandidates = function(x, y) {
