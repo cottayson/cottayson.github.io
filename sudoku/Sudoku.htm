@@ -128,6 +128,19 @@ s.setRow(8,[0,0,5, 0,0,4, 0,0,0]);
 s.setAllCandidates();
 s.print();
 
+var estimate = true;
+
+function turn() {
+if(estimate)
+  s.solver.estimate();
+else
+  s.solver.solve();
+estimate = !estimate;
+}
+
+s.elem.addEventListener('click', turn);
+window.addEventListener('keydown', turn);
+
 function Sudoku() {
 var sudoku = [];
 for(var i=0; i<9; i++) {
