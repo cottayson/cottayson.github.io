@@ -89,9 +89,7 @@ var w = 8, h = 2;
 									// is it the first tile we uncover?
 									if(firstTile==null){
 										firstTile=this
-									} animate();
-									// this is the second tile
-									else{
+									} else {
 										secondTile=this
 										// can't pick anymore
 										canPick=false;
@@ -123,6 +121,7 @@ var w = 8, h = 2;
 										}
 									}	
 								}
+							animate();
 							}
 						}
 					}
