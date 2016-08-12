@@ -89,7 +89,7 @@ var w = 8, h = 10;
 									// is it the first tile we uncover?
 									if(firstTile==null){
 										firstTile=this
-									}
+									} animate();
 									// this is the second tile
 									else{
 										secondTile=this
@@ -103,7 +103,7 @@ var w = 8, h = 10;
 												gameContainer.removeChild(secondTile);
 												firstTile=null;
 												secondTile=null;
-												canPick=true;
+												canPick=true; animate();
 											},1000);
 										}
 										// we picked different tiles
@@ -118,7 +118,7 @@ var w = 8, h = 10;
 								 				secondTile.alpha=0.5;
 								 				firstTile=null;
 												secondTile=null;
-												canPick=true	
+												canPick=true; animate();
 								 			},1000);
 										}
 									}	
@@ -127,10 +127,10 @@ var w = 8, h = 10;
 						}
 					}
 				} 
-				requestAnimFrame(animate);
+				// requestAnimFrame(animate);
 			}
 			function animate() {
-				requestAnimFrame(animate);
+				// requestAnimFrame(animate);
 				renderer.render(stage);
 			}
 		</script>
