@@ -12,6 +12,7 @@
 	</head>
 	<body>
 		<script>
+var w = 8, h = 6;
 			// first tile picked up by the player
 			var firstTile=null;
 			// second tile picked up by the player
@@ -21,7 +22,7 @@
 			// create an new instance of a pixi stage with a grey background
 			var stage = new PIXI.Stage(0x888888);
 			// create a renderer instance width=640 height=480
-			var renderer = PIXI.autoDetectRenderer(640,480);
+			var renderer = PIXI.autoDetectRenderer(80*w,80*h);
 			// importing a texture atlas created with texturepacker
 			var tileAtlas = ["images.json"];
 			// create a new loader
@@ -39,7 +40,7 @@
 			function onTilesLoaded(){
 				// choose 24 random tile images
 				var chosenTiles=new Array();
-				while(chosenTiles.length<48){
+				while(chosenTiles.length < w*h){
 					var candidate=Math.floor(Math.random()*44);
 					if(chosenTiles.indexOf(candidate)==-1){
 						chosenTiles.push(candidate,candidate)
@@ -47,24 +48,24 @@
 				}
 				// shuffle the chosen tiles
 				for(i=0;i<96;i++){
-					var from = Math.floor(Math.random()*48);
-					var to = Math.floor(Math.random()*48);
+					var from = Math.floor(Math.random()*w*h);
+					var to = Math.floor(Math.random()*w*h);
 					var tmp = chosenTiles[from];
 					chosenTiles[from]=chosenTiles[to];
 					chosenTiles[to]=tmp;
 				}
 				// place down tiles
-				for(i=0;i<8;i++){
-					for(j=0;j<6;j++){
+				for(i=0;i<w;i++){
+					for(j=0;j<h;j++){
 						// new sprite
-						var tile = PIXI.Sprite.fromFrame(chosenTiles[i*6+j]);
+						var tile = PIXI.Sprite.fromFrame(chosenTiles[i*h+j]);
 						// buttonmode+interactive = acts like a button
 						tile.buttonMode=true;
 						tile.interactive = true;
 						// is the tile selected?
 						tile.isSelected=false;
 						// set a tile value
-						tile.theVal=chosenTiles[i*6+j]
+						tile.theVal=chosenTiles[i*h+j]
 						// place the tile
 						tile.position.x = 7+i*80;
 						tile.position.y = 7+  j*80;
