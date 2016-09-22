@@ -94,15 +94,15 @@ window.onload = function() {
 turing.init();
 turing.overlay_.destroy();
 
-turing.tape_.contents_={0: "1", 1: "1",2: "1"};
+turing.tape_.contents_={};
 f([
-["*R","*D_","B2","","","B3"]
+["D_","L","B2"]
 ,
-["D","*L","B2","","","U"]
+["D_","_","D","", "D1",""]
 ,
-["*D0","*D_","*0","*L","B4","U"]
+["1","",  "R","U", "L",""]
 ,
-["*1","","","","","U"]
+["","","","","",""]
 ]);
 
   };
