@@ -59,25 +59,25 @@ turing.SPEED_CONFIG = {
   0 /* SLOW */: {
     stepTime: 750,
     tapeTime: 600,
-    emptyStepTime: 400,
+    emptyStepTime: 750,
     branchTime: 850
   },
   1 /* TUTORIAL */: {
     stepTime: 650,
     tapeTime: 500,
-    emptyStepTime: 200,
+    emptyStepTime: 650,
     branchTime: 750
   },
   2 /* NORMAL */: {
     stepTime: 450,
     tapeTime: 300,
-    emptyStepTime: 200,
+    emptyStepTime: 450,
     branchTime: 550
   },
   3 /* FAST */: {
     stepTime: 250,
     tapeTime: 200,
-    emptyStepTime: 100,
+    emptyStepTime: 250,
     branchTime: 250
   },
   4 /* LUDICROUS */: {
